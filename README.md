@@ -271,7 +271,13 @@ the share of the *remaining gap* closed (honest against an already-strong V1 bas
   the model used, latency, tokens, cost, and whether a fallback fired — all correlated by
   `question_id`.
 - **LangSmith** (optional): set `LANGSMITH_TRACING=true` + `LANGSMITH_API_KEY` in `.env` and the full
-  graph + LLM calls appear as traces in LangSmith.
+  graph + LLM calls appear as traces in the `ore` project. Each run is named `ore-q{id}-v{version}`
+  and tagged `q{id}` / `v{1|2}`, so you can find the exact trace for a question and compare V1 vs V2.
+  See `deep_dive/Observability.md` for what to check on the LangSmith website.
+
+> **Source references.** Every evidence item is cited by the same human-readable id the expert uses —
+> issue key (`NIM-412`), commit sha (`a1b2c3d`), Slack thread (`t-rel-1`), document slug
+> (`doc-release-v2.4`) — so evidence coverage is visually verifiable against the expert's sources.
 
 ---
 

@@ -8,7 +8,6 @@ interface Props {
   answer: AnswerView;
   label: string;
   accent: "slate" | "emerald";
-  delta?: number | null;
   newRefs?: Set<string>;
   metrics?: AnswerMetrics | null;
 }
@@ -42,28 +41,11 @@ const ACCENT: Record<Props["accent"], string> = {
   emerald: "border-emerald-300",
 };
 
-function DeltaChip({ delta }: { delta: number }) {
-  const cls =
-    delta > 0
-      ? "bg-emerald-100 text-emerald-700"
-      : delta < 0
-        ? "bg-red-100 text-red-700"
-        : "bg-slate-100 text-slate-600";
-  const sign = delta > 0 ? "▲ +" : delta < 0 ? "▼ " : "= ";
-  return (
-    <span className={`rounded px-1.5 py-0.5 text-xs font-semibold ${cls}`}>
-      {sign}
-      {delta}%
-    </span>
-  );
-}
-
 /** One side of the V1/V2 comparison: header, confidence, answer, root cause, trace, evidence. */
 export default function AnswerColumn({
   answer,
   label,
   accent,
-  delta,
   newRefs,
   metrics,
 }: Props) {
@@ -78,7 +60,6 @@ export default function AnswerColumn({
             {answer.question_type}
           </span>
         )}
-        {delta != null && <DeltaChip delta={delta} />}
         {answer.model && (
           <span
             className="rounded bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700"

@@ -22,7 +22,14 @@ async def search_docs(
 
     distance = DocumentChunk.embedding.cosine_distance(query_vec).label("distance")
     stmt = (
-        select(DocumentChunk, Document.title, Document.doc_type, Document.service, distance)
+        select(
+            DocumentChunk,
+            Document.ref,
+            Document.title,
+            Document.doc_type,
+            Document.service,
+            distance,
+        )
         .join(Document, DocumentChunk.document_id == Document.id)
         .order_by(distance)
         .limit(top_k)
@@ -32,11 +39,11 @@ async def search_docs(
     return [
         Evidence(
             source_type=SourceType.DOC,
-            source_ref=str(chunk.document_id),
+            source_ref=ref or str(chunk.document_id),  # human-readable slug; id fallback
             title=title,
             snippet=chunk.content,
             score=round(1.0 - float(dist), 4),  # cosine similarity
             metadata={"doc_type": doc_type, "service": service, "chunk_index": chunk.chunk_index},
         )
-        for chunk, title, doc_type, service, dist in rows
+        for chunk, ref, title, doc_type, service, dist in rows
     ]

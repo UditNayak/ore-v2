@@ -131,3 +131,10 @@ Each agent has a single responsibility, a typed contract, and the *right-sized m
 and sufficiency checks, smart synthesis and critique. That separation is what enables conditional
 routing, an adaptive retrieval loop, graceful refusal, and an explainable learning loop — none of
 which a single mega-prompt gives you cleanly.
+
+---
+
+## Related deep dives
+- **`Retrieval.md`** — the Investigator's agentic retrieval loop (semantic vs keyword, ranking, max iters).
+- **`Observability.md`** — how to trace these agents in LangSmith + the structured logs.
+- **`CodebaseMap.md`** — the full file-by-file catalog.

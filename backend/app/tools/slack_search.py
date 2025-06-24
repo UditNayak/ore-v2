@@ -30,7 +30,7 @@ async def search_slack(
     results = [
         Evidence(
             source_type=SourceType.SLACK,
-            source_ref=str(msg.id),
+            source_ref=msg.thread_id,  # human-readable slug experts cite (e.g. "t-rel-1")
             title=f"#{msg.channel} — {msg.author}",
             snippet=msg.text,
             score=keyword_score(msg.text, query_terms),

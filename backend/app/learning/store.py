@@ -20,6 +20,7 @@ def _embedding_text(question: str, critic: CriticOutput) -> str:
         critic.summary,
         critic.missed_reasoning or "",
         critic.corrected_root_cause or "",
+        f"Missed sources: {', '.join(critic.missed_sources)}" if critic.missed_sources else "",
     ]
     return "\n".join(b for b in bits if b)
 

@@ -5,7 +5,7 @@
     "question_type": "release_delay",
     "expert_answer": "v2.4 was held because the billing-service schema migration failed its integration test (NIM-412). Priya Nair reverted the migration commit (a1b2c3d) to keep main green, so the billing change could not ship. Release manager Lee Tan moved the v2.4 target to the following week; it will ship once the integration test passes.",
     "expected_root_cause": "A failing billing-service migration integration test (NIM-412) blocked the release.",
-    "expected_source_refs": ["NIM-412", "a1b2c3d", "t-rel-1"],
+    "expected_source_refs": ["NIM-412", "a1b2c3d", "t-rel-1", "doc-release-v2.4"],
     "cross_questions": [
       {"q": "Who reverted the change and why?", "a": "Priya Nair reverted commit a1b2c3d to keep main green until the test is fixed."},
       {"q": "Which service caused the delay?", "a": "billing-service (its schema migration)."},
@@ -19,7 +19,7 @@
     "question_type": "incident",
     "expert_answer": "The data-pipeline nightly backfill job (NIM-420, commit b2c3d4e) ran during peak hours and opened a large number of connections, saturating the shared billing database connection pool. checkout-service shares that pool, so it was starved of connections, driving p99 latency from ~300ms to ~4s. The fix was to reschedule the backfill off-peak and give the pipeline its own connection pool.",
     "expected_root_cause": "The data-pipeline backfill saturated the shared billing DB connection pool, starving checkout-service.",
-    "expected_source_refs": ["NIM-420", "NIM-431", "b2c3d4e", "t-inc-1"],
+    "expected_source_refs": ["NIM-420", "NIM-431", "b2c3d4e", "t-inc-1", "doc-inc-87"],
     "cross_questions": [
       {"q": "What was the fix?", "a": "Reschedule the backfill to off-peak and give data-pipeline its own connection pool."},
       {"q": "Who owns the follow-up actions?", "a": "Maya Singh, tracked in NIM-431 (isolate connections, add pool saturation alerts)."},
@@ -32,7 +32,7 @@
     "question_type": "ownership",
     "expert_answer": "Ravi Patel owns notifications-service and is its release approver and primary on-call. Maya Singh is the backup on-call.",
     "expected_root_cause": "Service ownership is recorded in the service catalog / on-call docs and reinforced in Slack.",
-    "expected_source_refs": ["t-ops-1", "c3d4e5f"],
+    "expected_source_refs": ["t-ops-1", "c3d4e5f", "doc-oncall-ownership"],
     "cross_questions": [
       {"q": "Who is the backup?", "a": "Maya Singh."},
       {"q": "Who approves releases for notifications-service?", "a": "The accountable owner, Ravi Patel."}
@@ -44,7 +44,7 @@
     "question_type": "design_rationale",
     "expert_answer": "It consumes domain events off the message bus instead of being called synchronously, for three reasons: decoupling producers from notification logic, resilience (events queue and retry if the notifier is down instead of failing the caller), and scalability (the queue absorbs spikes). The tradeoff is eventual consistency — a notification may lag the triggering action by a few seconds.",
     "expected_root_cause": "Event-driven was chosen for decoupling, resilience/retry, and scalability, accepting eventual consistency.",
-    "expected_source_refs": ["t-arch-1", "c3d4e5f"],
+    "expected_source_refs": ["t-arch-1", "c3d4e5f", "doc-notif-eventdriven"],
     "cross_questions": [
       {"q": "What is the main tradeoff?", "a": "Eventual consistency — notifications may lag the action by a few seconds."},
       {"q": "Should services call it synchronously?", "a": "No — synchronous calls into it are discouraged by design."}

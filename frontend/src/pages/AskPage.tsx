@@ -179,6 +179,12 @@ export default function AskPage() {
                 <p className="text-sm text-amber-900">
                   {d.human_answer?.answer_text}
                 </p>
+                {d.human_answer?.root_cause && (
+                  <p className="text-xs text-amber-800">
+                    <span className="font-semibold">Root cause:</span>{" "}
+                    {d.human_answer.root_cause}
+                  </p>
+                )}
                 {d.human_answer &&
                   d.human_answer.expected_sources.length > 0 && (
                     <p className="text-xs text-amber-700">

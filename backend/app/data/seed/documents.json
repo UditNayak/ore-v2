@@ -1,29 +1,34 @@
 [
   {
+    "ref": "doc-service-catalog",
     "doc_type": "wiki",
     "title": "Nimbus Service Catalog",
     "service": null,
     "content": "Nimbus is a SaaS analytics platform. Core services and their owners:\n\n- auth-service (owner: Dan Reyes) — authentication, sessions, and API rate limiting.\n- billing-service (owner: Priya Nair) — subscriptions, invoices, and schema migrations.\n- checkout-service (owner: Maya Singh) — the customer-facing checkout and payment flow.\n- data-pipeline (owner: Sam Okoro) — nightly ETL and backfill jobs feeding analytics.\n- notifications-service (owner: Ravi Patel) — email and in-app notifications, event-driven.\n\nEach service has a single accountable owner who approves releases for that service."
   },
   {
+    "ref": "doc-release-v2.4",
     "doc_type": "wiki",
     "title": "Release Process and v2.4 Status",
     "service": null,
     "content": "Nimbus ships a coordinated platform release every two weeks. A release is blocked if any included service has a failing required integration test.\n\nRelease v2.4 status: DELAYED. The release is held because the billing-service schema migration (tracked in NIM-412) has a failing integration test. Priya reverted the migration commit to keep main green, so the billing change cannot ship until the migration test is fixed. Release manager Lee Tan moved the v2.4 target to the following week."
   },
   {
+    "ref": "doc-inc-87",
     "doc_type": "postmortem",
     "title": "INC-87 Postmortem: Checkout latency spike",
     "service": "checkout-service",
     "content": "Incident INC-87. On the incident day at 14:00 UTC, checkout p99 latency rose from 300ms to 4.2s for 35 minutes.\n\nRoot cause: the data-pipeline nightly backfill job (added in NIM-420) ran during peak hours and opened a large number of connections to the shared billing database, exhausting the connection pool. checkout-service shares that pool and was starved of connections, causing the latency spike.\n\nResolution: the backfill was rescheduled to off-peak and given its own connection pool. Action items: isolate pipeline connections; add pool saturation alerts."
   },
   {
+    "ref": "doc-notif-eventdriven",
     "doc_type": "design",
     "title": "Design: Why notifications-service is event-driven",
     "service": "notifications-service",
     "content": "Decision: notifications-service consumes domain events from a message bus rather than being called synchronously by other services.\n\nRationale: (1) Decoupling — producers do not need to know about notification logic. (2) Resilience — if the notifier is down, events queue and are retried instead of failing the caller. (3) Scalability — notification spikes are absorbed by the queue. The trade-off is eventual consistency: a notification may lag the triggering action by a few seconds."
   },
   {
+    "ref": "doc-oncall-ownership",
     "doc_type": "wiki",
     "title": "On-call and Service Ownership",
     "service": null,

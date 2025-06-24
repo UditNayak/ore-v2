@@ -9,21 +9,18 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.db.models import AIAnswer, HumanAnswer, SlackMessage
+from app.db.models import AIAnswer, HumanAnswer
 from app.eval import metrics
 from app.eval.judge import judge_root_cause
 
 
 async def evidence_ids(session: AsyncSession, answer: AIAnswer) -> set[str]:
-    """Stable identifiers for an answer's evidence (incl. slack thread ids)."""
-    ids: set[str] = set()
-    for ev in answer.evidence:
-        ids.add(ev.source_ref)
-        if ev.source_type == "slack" and ev.source_ref.isdigit():
-            msg = await session.get(SlackMessage, int(ev.source_ref))
-            if msg:
-                ids.add(msg.thread_id)
-    return ids
+    """Human-readable identifiers for an answer's evidence.
+
+    Every tool now stores the slug experts cite as `source_ref` (issue key, commit sha,
+    slack thread id, document ref), so coverage matching is a direct set intersection.
+    """
+    return {ev.source_ref for ev in answer.evidence}
 
 
 async def score_answer(

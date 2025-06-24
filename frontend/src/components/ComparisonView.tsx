@@ -21,7 +21,6 @@ export default function ComparisonView({
   rerunPending,
   onRerun,
 }: Props) {
-  const delta = v2 ? Math.round((v2.confidence - v1.confidence) * 100) : null;
   const v1Refs = new Set(v1.evidence.map((e) => e.source_ref));
   const newRefs = v2
     ? new Set(
@@ -42,7 +41,6 @@ export default function ComparisonView({
           answer={v2}
           label="V2 · after learning"
           accent="emerald"
-          delta={delta}
           newRefs={newRefs}
           metrics={v2Metrics}
         />

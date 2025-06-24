@@ -12,6 +12,7 @@ from app.db.models import AIAnswer, HumanAnswer, LearningEvent, Question
 from app.learning.critic import run_critic
 from app.learning.store import create_learning_event
 from app.llm.gateway import get_gateway
+from app.services.scoring import evidence_ids
 
 log = structlog.get_logger("service.learning")
 
@@ -59,6 +60,11 @@ async def submit_human_answer(
     ai_answer = await _latest_ai_answer(session, question_id)
     ai_sources = [e.source_ref for e in ai_answer.evidence] if ai_answer else []
 
+    # Deterministic gap: expert-expected sources V1 never surfaced. Authoritative for the lesson.
+    expected = expected_sources or []
+    covered = {c.lower() for c in (await evidence_ids(session, ai_answer))} if ai_answer else set()
+    missed = [s for s in expected if s.strip().lower() not in covered]
+
     critic = await run_critic(
         get_gateway(),
         question=question.text,
@@ -67,6 +73,8 @@ async def submit_human_answer(
         ai_sources=ai_sources,
         human_answer=answer_text,
         human_root_cause=root_cause,
+        expected_sources=expected,
+        missed_sources=missed,
     )
 
     event = await create_learning_event(

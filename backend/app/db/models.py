@@ -25,6 +25,7 @@ class Document(Base):
     __tablename__ = "documents"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    ref: Mapped[str | None] = mapped_column(Text, unique=True, nullable=True)  # slug experts cite
     doc_type: Mapped[str] = mapped_column(Text)
     title: Mapped[str] = mapped_column(Text)
     service: Mapped[str | None] = mapped_column(Text, nullable=True)

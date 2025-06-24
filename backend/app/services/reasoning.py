@@ -53,7 +53,14 @@ async def _run_graph_and_persist(session: AsyncSession, question: Question, vers
     )
     started = time.monotonic()
     result = await get_graph().ainvoke(
-        initial, config={"configurable": {"session": session, "gateway": gateway}}
+        initial,
+        config={
+            "configurable": {"session": session, "gateway": gateway},
+            # Correlate the LangSmith trace with this question + version (searchable in the UI).
+            "run_name": f"ore-q{question.id}-v{version}",
+            "tags": ["ore", f"q{question.id}", f"v{version}"],
+            "metadata": {"question_id": question.id, "version": version},
+        },
     )
     elapsed_s = round(time.monotonic() - started, 2)
     final = _as_state(result)
