@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   askQuestion,
   getQuestionDetail,
+  getScenarios,
   rerunQuestion,
   submitHumanAnswer,
 } from "../api/questions";
+import type { Suggestion } from "../components/HumanAnswerForm";
 import ComparisonView from "../components/ComparisonView";
-import Feed from "../components/Feed";
 import HumanAnswerForm from "../components/HumanAnswerForm";
 import LearningEventCard from "../components/LearningEventCard";
 import Stepper from "../components/Stepper";
@@ -22,16 +24,22 @@ const SAMPLE_QUESTIONS = [
 
 export default function AskPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const questionId = id ? Number(id) : null;
   const [text, setText] = useState("");
-  const [questionId, setQuestionId] = useState<number | null>(null);
 
   const detail = useQuery({
     queryKey: ["question", questionId],
     queryFn: () => getQuestionDetail(questionId as number),
     enabled: questionId != null,
   });
+  const scenarios = useQuery({
+    queryKey: ["scenarios"],
+    queryFn: getScenarios,
+  });
 
-  const refetchAll = () => {
+  const invalidateDetail = () => {
     qc.invalidateQueries({ queryKey: ["question", questionId] });
     qc.invalidateQueries({ queryKey: ["questions"] });
   };
@@ -39,8 +47,8 @@ export default function AskPage() {
   const ask = useMutation({
     mutationFn: askQuestion,
     onSuccess: (a) => {
-      setQuestionId(a.question_id);
       qc.invalidateQueries({ queryKey: ["questions"] });
+      navigate(`/q/${a.question_id}`);
     },
   });
   const learn = useMutation({
@@ -55,23 +63,34 @@ export default function AskPage() {
         root_cause: vars.rootCause || undefined,
         expected_sources: vars.sources,
       }),
-    onSuccess: refetchAll,
+    onSuccess: invalidateDetail,
   });
   const rerun = useMutation({
     mutationFn: rerunQuestion,
-    onSuccess: refetchAll,
+    onSuccess: invalidateDetail,
   });
 
   const submit = (q: string) => {
     const t = q.trim();
     if (t) ask.mutate({ text: t, asker: "ui" });
   };
-  const reset = () => {
-    setQuestionId(null);
-    setText("");
-  };
 
   const d = detail.data;
+
+  // Reference answer to autoload, if this question matches a seeded scenario.
+  const suggestion: Suggestion | null = (() => {
+    if (!d || !scenarios.data) return null;
+    const match = scenarios.data.find(
+      (s) => s.question.trim().toLowerCase() === d.text.trim().toLowerCase(),
+    );
+    return match
+      ? {
+          answer: match.expert_answer,
+          rootCause: match.expected_root_cause ?? "",
+          sources: match.expected_source_refs,
+        }
+      : null;
+  })();
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -119,19 +138,11 @@ export default function AskPage() {
           </form>
         </>
       ) : (
-        <div className="mb-5 flex items-start justify-between gap-4 rounded-lg border border-slate-200 bg-white p-3">
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-              Question
-            </span>
-            <p className="text-slate-800">{d?.text ?? "…"}</p>
-          </div>
-          <button
-            onClick={reset}
-            className="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
-          >
-            Ask another
-          </button>
+        <div className="mb-5 rounded-lg border border-slate-200 bg-white p-3">
+          <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Question
+          </span>
+          <p className="text-slate-800">{d?.text ?? "…"}</p>
         </div>
       )}
 
@@ -169,6 +180,7 @@ export default function AskPage() {
           ) : (
             <HumanAnswerForm
               pending={learn.isPending}
+              suggestion={suggestion}
               onSubmit={(answer, rootCause, sources) =>
                 learn.mutate({ id: d.id, answer, rootCause, sources })
               }
@@ -188,13 +200,6 @@ export default function AskPage() {
           />
         </div>
       )}
-
-      <section className="mt-10">
-        <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">
-          Recent questions
-        </h2>
-        <Feed activeId={questionId} onSelect={setQuestionId} />
-      </section>
     </div>
   );
 }

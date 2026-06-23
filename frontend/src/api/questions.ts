@@ -7,6 +7,7 @@ import type {
   LearningEventView,
   QuestionDetail,
   QuestionListItem,
+  ScenarioView,
 } from "./types";
 
 /** Submit a question and get the V1 answer (runs the multi-agent graph server-side). */
@@ -50,5 +51,11 @@ export async function listQuestions(): Promise<QuestionListItem[]> {
 /** Eval-run history for the dashboard trends. */
 export async function getEvalRuns(): Promise<EvalRun[]> {
   const res = await api.get<EvalRun[]>("/metrics/eval-runs");
+  return res.data;
+}
+
+/** Seeded scenarios (ground truth) — used to autoload the expert answer. */
+export async function getScenarios(): Promise<ScenarioView[]> {
+  const res = await api.get<ScenarioView[]>("/scenarios");
   return res.data;
 }

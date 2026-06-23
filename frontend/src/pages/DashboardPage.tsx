@@ -35,20 +35,30 @@ function Kpi({
 }
 
 export default function DashboardPage() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["eval-runs"],
     queryFn: getEvalRuns,
+    refetchOnMount: "always", // always re-pull on navigation
+    refetchInterval: 15000, // poll so a completed run shows up without a manual reload
   });
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold">
-          Dashboard — accuracy & learning trends
-        </h1>
-        <p className="text-slate-500">
-          Aggregated from evaluation runs against the success criteria.
-        </p>
+      <header className="mb-6 flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">
+            Dashboard — accuracy & learning trends
+          </h1>
+          <p className="text-slate-500">
+            Aggregated from evaluation runs against the success criteria.
+          </p>
+        </div>
+        <button
+          onClick={() => refetch()}
+          className="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
+        >
+          {isFetching ? "Refreshing…" : "↻ Refresh"}
+        </button>
       </header>
 
       {isLoading && <p className="text-slate-400">Loading…</p>}

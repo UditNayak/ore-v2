@@ -164,3 +164,13 @@ class EvalRunView(BaseModel):
     id: int
     created_at: str
     summary: dict[str, Any]
+
+
+class ScenarioView(BaseModel):
+    """A seeded test scenario's ground truth — used to autoload the expert answer in the UI."""
+
+    id: str
+    question: str
+    expert_answer: str
+    expected_root_cause: str | None
+    expected_source_refs: list[str]

@@ -1,7 +1,14 @@
 import { useState } from "react";
 
+export interface Suggestion {
+  answer: string;
+  rootCause: string;
+  sources: string[];
+}
+
 interface Props {
   pending: boolean;
+  suggestion?: Suggestion | null;
   onSubmit: (
     answerText: string,
     rootCause: string,
@@ -10,7 +17,11 @@ interface Props {
 }
 
 /** Capture the expert ground-truth answer (the HITL step that drives learning). */
-export default function HumanAnswerForm({ pending, onSubmit }: Props) {
+export default function HumanAnswerForm({
+  pending,
+  suggestion,
+  onSubmit,
+}: Props) {
   const [answer, setAnswer] = useState("");
   const [rootCause, setRootCause] = useState("");
   const [sources, setSources] = useState("");
@@ -21,6 +32,13 @@ export default function HumanAnswerForm({ pending, onSubmit }: Props) {
       .map((s) => s.trim())
       .filter(Boolean);
 
+  const loadReference = () => {
+    if (!suggestion) return;
+    setAnswer(suggestion.answer);
+    setRootCause(suggestion.rootCause);
+    setSources(suggestion.sources.join(", "));
+  };
+
   return (
     <form
       onSubmit={(e) => {
@@ -30,14 +48,25 @@ export default function HumanAnswerForm({ pending, onSubmit }: Props) {
       }}
       className="space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-5"
     >
-      <div>
-        <h3 className="font-semibold text-amber-800">
-          🧑 Expert answer (ground truth)
-        </h3>
-        <p className="text-sm text-amber-700">
-          Provide the real answer — the Critic compares it to V1 and captures
-          what was missed.
-        </p>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="font-semibold text-amber-800">
+            🧑 Expert answer (ground truth)
+          </h3>
+          <p className="text-sm text-amber-700">
+            Provide the real answer — the Critic compares it to V1 and captures
+            what was missed.
+          </p>
+        </div>
+        {suggestion && (
+          <button
+            type="button"
+            onClick={loadReference}
+            className="shrink-0 rounded-lg border border-amber-400 bg-white px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100"
+          >
+            ⬇ Load reference answer
+          </button>
+        )}
       </div>
       <textarea
         value={answer}

@@ -11,7 +11,7 @@ import structlog
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import health, metrics, questions
+from app.api import health, metrics, questions, scenarios
 from app.core.config import get_settings
 from app.core.logging import configure_logging
 from app.core.observability import configure_observability
@@ -50,6 +50,7 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(questions.router)
 app.include_router(metrics.router)
+app.include_router(scenarios.router)
 
 
 @app.get("/")

@@ -87,3 +87,11 @@ export interface EvalRun {
   created_at: string;
   summary: Record<string, number | null>;
 }
+
+export interface ScenarioView {
+  id: string;
+  question: string;
+  expert_answer: string;
+  expected_root_cause: string | null;
+  expected_source_refs: string[];
+}
