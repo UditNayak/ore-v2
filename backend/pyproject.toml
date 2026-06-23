@@ -1,0 +1,51 @@
+[project]
+name = "ore-backend"
+version = "0.1.0"
+description = "Organizational Reasoning Engine — backend (FastAPI + LangGraph)"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "structlog>=24.4",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+# Added incrementally per phase to keep early Docker builds fast.
+# phase1 (LLM gateway): litellm, langchain-core
+# phase2 (DB + RAG):    sqlalchemy[asyncio], asyncpg, alembic, pgvector
+# phase3 (agents):      langgraph, langchain
+dev = [
+    "ruff>=0.7",
+    "mypy>=1.13",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "httpx>=0.27",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["app"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "ASYNC", "SIM"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]

@@ -1,0 +1,46 @@
+"""FastAPI application entrypoint.
+
+Later phases extend the lifespan to run migrations and seed the synthetic dataset.
+"""
+
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
+import structlog
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from app.api import health
+from app.core.config import get_settings
+from app.core.logging import configure_logging
+
+settings = get_settings()
+configure_logging(settings.log_level)
+log = structlog.get_logger()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    """Application startup/shutdown hook (migrations + seeding land here later)."""
+    log.info("startup", app=settings.app_name, environment=settings.environment)
+    yield
+    log.info("shutdown")
+
+
+app = FastAPI(title=settings.app_name, version="0.1.0", lifespan=lifespan)
+
+# Permissive CORS in development so the Vite dev server can call the API.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(health.router)
+
+
+@app.get("/")
+async def root() -> dict[str, str]:
+    """Friendly root pointing at the docs."""
+    return {"service": "ore-backend", "docs": "/docs"}

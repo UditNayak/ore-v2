@@ -1,0 +1,32 @@
+# LLM gateway configuration — provider/model tiers with automatic fallback.
+# See docs/decisions/0002-llm-gateway-multiprovider.md.
+#
+# Each tier is an ORDERED list of candidates: index 0 is primary, the rest are
+# fallbacks tried in order when a candidate fails. Nodes request a TIER, never a
+# specific provider, so providers can be swapped here without touching code.
+#
+# Phase 1 is intentionally Groq-only (free) for fast, zero-cost iteration.
+# Later (Phase 7) the `smart` tier gains Anthropic/OpenAI as primary with Groq as
+# fallback — a config-only change that proves the abstraction.
+
+tiers:
+  smart:
+    - provider: groq
+      model: llama-3.3-70b-versatile
+      temperature: 0.2
+  cheap:
+    - provider: groq
+      model: llama-3.1-8b-instant
+      temperature: 0.0
+
+# Phase 7 target (kept here as documentation; uncomment to upgrade):
+# tiers:
+#   smart:
+#     - provider: anthropic
+#       model: claude-sonnet-4-6
+#       temperature: 0.2
+#     - provider: groq            # fallback
+#       model: llama-3.3-70b-versatile
+#   cheap:
+#     - provider: groq
+#       model: llama-3.1-8b-instant
