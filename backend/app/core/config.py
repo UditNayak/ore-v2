@@ -47,6 +47,12 @@ class Settings(BaseSettings):
     learning_top_k: int = 3
     learning_min_score: float = 0.3  # min similarity for a past lesson to be injected
 
+    # Observability (Phase 7) — LangSmith tracing of the graph + LLM calls (env-gated).
+    langsmith_tracing: bool = False
+    langsmith_api_key: str | None = None
+    langsmith_project: str = "ore"
+    langsmith_endpoint: str = "https://api.smith.langchain.com"
+
 
 @lru_cache
 def get_settings() -> Settings:

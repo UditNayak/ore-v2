@@ -5,12 +5,16 @@
 # fallbacks tried in order when a candidate fails. Nodes request a TIER, never a
 # specific provider, so providers can be swapped here without touching code.
 #
-# Phase 1 is intentionally Groq-only (free) for fast, zero-cost iteration.
-# Later (Phase 7) the `smart` tier gains Anthropic/OpenAI as primary with Groq as
-# fallback — a config-only change that proves the abstraction.
+# Default is Groq-only (free). To UPGRADE the smart tier to a frontier model, prepend one
+# candidate to `smart` (Groq stays as the automatic fallback) and set the provider key in .env —
+# NO code changes. Examples:
+#   - {provider: anthropic, model: claude-sonnet-4-6, temperature: 0.2}   # needs ANTHROPIC_API_KEY
+#   - {provider: openai,    model: gpt-4o,            temperature: 0.2}   # needs OPENAI_API_KEY
 
 tiers:
   smart:
+    # --- to upgrade, uncomment one line below (becomes primary; Groq below is the fallback) ---
+    # - {provider: anthropic, model: claude-sonnet-4-6, temperature: 0.2, max_tokens: 1024}
     - provider: groq
       model: llama-3.3-70b-versatile
       temperature: 0.2
@@ -20,15 +24,3 @@ tiers:
       model: llama-3.1-8b-instant
       temperature: 0.0
       max_tokens: 512
-
-# Phase 7 target (kept here as documentation; uncomment to upgrade):
-# tiers:
-#   smart:
-#     - provider: anthropic
-#       model: claude-sonnet-4-6
-#       temperature: 0.2
-#     - provider: groq            # fallback
-#       model: llama-3.3-70b-versatile
-#   cheap:
-#     - provider: groq
-#       model: llama-3.1-8b-instant

@@ -31,6 +31,15 @@ def _as_state(result: Any) -> GraphState:
 
 async def _run_and_persist(session: AsyncSession, question: Question, version: int) -> int:
     """Run the graph for `question` at the given version, injecting learning, and persist."""
+    # Correlate every downstream node/LLM log line with this question + version.
+    structlog.contextvars.bind_contextvars(question_id=question.id, version=version)
+    try:
+        return await _run_graph_and_persist(session, question, version)
+    finally:
+        structlog.contextvars.unbind_contextvars("question_id", "version")
+
+
+async def _run_graph_and_persist(session: AsyncSession, question: Question, version: int) -> int:
     lessons = await retrieve_learning_context(session, question.text)
     initial = GraphState(
         question=question.text,

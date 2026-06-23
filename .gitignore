@@ -13,6 +13,9 @@ node_modules/
 dist/
 .vite/
 
+# Generated eval reports
+eval_results/
+
 # Env & secrets
 .env
 *.local
@@ -21,3 +24,9 @@ dist/
 .DS_Store
 .idea/
 .vscode/
+
+# Temporary UnCommited
+/docs
+README.md
+CLAUDE.md 
+.agents

@@ -14,12 +14,14 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import health, metrics, questions
 from app.core.config import get_settings
 from app.core.logging import configure_logging
+from app.core.observability import configure_observability
 from app.db.migrate import run_migrations
 from app.db.seed import seed_if_empty
 from app.db.session import SessionLocal
 
 settings = get_settings()
 configure_logging(settings.log_level)
+configure_observability()
 log = structlog.get_logger()
 
 
