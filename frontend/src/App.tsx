@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { askQuestion } from "./api/questions";
+import { askQuestion, rerunQuestion, submitHumanAnswer } from "./api/questions";
+import type { AnswerView, LearningEventView } from "./api/types";
 import AnswerCard from "./components/AnswerCard";
+import HumanAnswerForm from "./components/HumanAnswerForm";
+import LearningEventCard from "./components/LearningEventCard";
 
-// Mirrors docs/TEST_SCENARIOS.md so the corpus can be exercised in one click.
 const SAMPLE_QUESTIONS = [
   "Why was release v2.4 delayed?",
   "What caused the checkout latency spike in INC-87?",
@@ -14,12 +16,31 @@ const SAMPLE_QUESTIONS = [
 
 export default function App() {
   const [text, setText] = useState("");
-  const mutation = useMutation({ mutationFn: askQuestion });
+  const [v1, setV1] = useState<AnswerView | null>(null);
+  const [event, setEvent] = useState<LearningEventView | null>(null);
+  const [v2, setV2] = useState<AnswerView | null>(null);
 
-  const submit = (question: string) => {
-    const q = question.trim();
-    if (q) mutation.mutate({ text: q, asker: "ui" });
+  const ask = useMutation({
+    mutationFn: askQuestion,
+    onSuccess: (a) => {
+      setV1(a);
+      setEvent(null);
+      setV2(null);
+    },
+  });
+  const learn = useMutation({
+    mutationFn: (vars: { id: number; answer: string; rootCause: string }) =>
+      submitHumanAnswer(vars.id, { answer_text: vars.answer, root_cause: vars.rootCause || undefined }),
+    onSuccess: setEvent,
+  });
+  const rerun = useMutation({ mutationFn: rerunQuestion, onSuccess: setV2 });
+
+  const submit = (q: string) => {
+    const t = q.trim();
+    if (t) ask.mutate({ text: t, asker: "ui" });
   };
+
+  const delta = v1 && v2 ? Math.round((v2.confidence - v1.confidence) * 100) : null;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
@@ -27,8 +48,7 @@ export default function App() {
         <header className="mb-6">
           <h1 className="text-2xl font-bold">Organizational Reasoning Engine</h1>
           <p className="text-slate-500">
-            Ask an organizational question — the agents investigate the corpus and answer with
-            evidence.
+            Ask a question → review V1 → give the expert answer → re-run to a better V2.
           </p>
         </header>
 
@@ -63,27 +83,79 @@ export default function App() {
           />
           <button
             type="submit"
-            disabled={mutation.isPending || !text.trim()}
+            disabled={ask.isPending || !text.trim()}
             className="mt-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
           >
-            {mutation.isPending ? "Investigating…" : "Ask"}
+            {ask.isPending ? "Investigating…" : "Ask"}
           </button>
         </form>
 
-        {mutation.isError && (
-          <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
-            Request failed: {(mutation.error as Error).message}
+        {ask.isError && <Error msg={(ask.error as Error).message} />}
+        {ask.isPending && <Busy text="The agents are planning, investigating, and reasoning…" />}
+
+        {v1 && (
+          <div className="space-y-6">
+            <Labeled label={v2 ? "Version 1 (before learning)" : "Answer (V1)"}>
+              <AnswerCard answer={v1} />
+            </Labeled>
+
+            {!event && (
+              <HumanAnswerForm
+                pending={learn.isPending}
+                onSubmit={(answer, rootCause) =>
+                  learn.mutate({ id: v1.question_id, answer, rootCause })
+                }
+              />
+            )}
+            {learn.isError && <Error msg={(learn.error as Error).message} />}
+
+            {event && (
+              <>
+                <LearningEventCard event={event} />
+                {!v2 && (
+                  <button
+                    onClick={() => rerun.mutate(v1.question_id)}
+                    disabled={rerun.isPending}
+                    className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-500 disabled:opacity-50"
+                  >
+                    {rerun.isPending ? "Re-running with memory…" : "Re-run → V2"}
+                  </button>
+                )}
+                {rerun.isError && <Error msg={(rerun.error as Error).message} />}
+              </>
+            )}
+
+            {v2 && (
+              <Labeled
+                label={`Version 2 (after learning)${
+                  delta != null ? ` — confidence ${delta >= 0 ? "+" : ""}${delta}%` : ""
+                }`}
+              >
+                <AnswerCard answer={v2} />
+              </Labeled>
+            )}
           </div>
         )}
-
-        {mutation.isPending && (
-          <div className="rounded-lg border border-slate-200 bg-white p-6 text-slate-500">
-            The agents are planning, investigating sources, and reasoning… this takes a few seconds.
-          </div>
-        )}
-
-        {mutation.data && <AnswerCard answer={mutation.data} />}
       </div>
     </div>
   );
+}
+
+function Labeled({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="mb-2 text-sm font-semibold uppercase tracking-wide text-slate-400">
+        {label}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Busy({ text }: { text: string }) {
+  return <div className="rounded-lg border border-slate-200 bg-white p-6 text-slate-500">{text}</div>;
+}
+
+function Error({ msg }: { msg: string }) {
+  return <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">Request failed: {msg}</div>;
 }

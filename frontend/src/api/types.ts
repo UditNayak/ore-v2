@@ -29,3 +29,17 @@ export interface AskRequest {
   asker?: string;
   channel?: string;
 }
+
+export interface HumanAnswerRequest {
+  answer_text: string;
+  root_cause?: string;
+  expert_name?: string;
+}
+
+export interface LearningEventView {
+  id: number;
+  summary: string;
+  missed_sources: string[];
+  missed_reasoning: string | null;
+  corrected_root_cause: string | null;
+}

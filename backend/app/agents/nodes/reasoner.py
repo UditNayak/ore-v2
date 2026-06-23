@@ -14,6 +14,7 @@ from app.agents.schemas import ReasonerOutput
 from app.agents.state import GraphState
 from app.core.config import get_settings
 from app.core.guardrails import INSUFFICIENT_EVIDENCE_MESSAGE, evaluate_answer
+from app.learning.injection import learning_block
 from app.llm.structured import structured_call
 from app.llm.tiers import Tier
 
@@ -45,13 +46,11 @@ async def reasoner(state: GraphState, config: RunnableConfig) -> dict[str, Any]:
         }
 
     _, gateway = context(config)
+    user = _USER.format(
+        question=state.question, evidence=format_evidence(state.evidence)
+    ) + learning_block(state.learning_context)
     try:
-        out = await structured_call(
-            gateway.get_llm(Tier.SMART),
-            _SYSTEM,
-            _USER.format(question=state.question, evidence=format_evidence(state.evidence)),
-            ReasonerOutput,
-        )
+        out = await structured_call(gateway.get_llm(Tier.SMART), _SYSTEM, user, ReasonerOutput)
     except (ValueError, KeyError) as exc:
         log.warning("reasoner_failed", error=str(exc))
         return {

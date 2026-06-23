@@ -27,6 +27,24 @@ class SufficiencyVerdict(BaseModel):
     )
 
 
+class CriticOutput(BaseModel):
+    """Gap analysis of the AI's V1 answer against the human expert's ground truth."""
+
+    summary: str = Field(
+        description="One-line lesson: what the AI should do differently next time."
+    )
+    missed_sources: list[str] = Field(
+        default_factory=list,
+        description="source_ref values the expert relied on that the AI missed.",
+    )
+    missed_reasoning: str | None = Field(
+        default=None, description="A reasoning step or causal link the AI overlooked."
+    )
+    corrected_root_cause: str | None = Field(
+        default=None, description="The correct root cause, if the AI's was wrong or incomplete."
+    )
+
+
 class ReasonerOutput(BaseModel):
     """The drafted answer with its reasoning, root cause, confidence, and citations."""
 

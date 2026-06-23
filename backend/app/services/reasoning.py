@@ -1,13 +1,15 @@
-"""Reasoning service — orchestrate the LangGraph run and persist the V1 answer.
+"""Reasoning service — orchestrate the LangGraph run and persist an answer (V1 or V2).
 
 Keeps the agent graph (pure reasoning) separate from persistence (this layer): the graph
-returns state; the service writes the Question, AIAnswer, and AnswerEvidence rows.
+returns state; the service writes the Question, AIAnswer, and AnswerEvidence rows. Before
+each run it injects relevant past lessons (retrieved-memory) — empty on a fresh V1, populated
+on a re-run after a learning event exists.
 """
 
 from typing import Any, cast
 
 import structlog
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -15,6 +17,7 @@ from app.agents.graph import get_graph
 from app.agents.state import GraphState
 from app.core.enums import QuestionStatus
 from app.db.models import AIAnswer, AnswerEvidence, Question
+from app.learning.store import retrieve_learning_context
 from app.llm.gateway import get_gateway
 
 log = structlog.get_logger("service.reasoning")
@@ -25,30 +28,28 @@ def _as_state(result: Any) -> GraphState:
     return result if isinstance(result, GraphState) else GraphState(**result)
 
 
-async def answer_question(
-    session: AsyncSession,
-    text: str,
-    *,
-    asker: str | None = None,
-    channel: str | None = None,
-) -> int:
-    """Run the V1 reasoning graph for a new question and persist it. Returns the AIAnswer id."""
-    question = Question(text=text, asker=asker, channel=channel, status=QuestionStatus.NEW.value)
-    session.add(question)
-    await session.flush()  # assign question.id
-
-    initial = GraphState(question=text, question_id=question.id, version=1)
+async def _run_and_persist(session: AsyncSession, question: Question, version: int) -> int:
+    """Run the graph for `question` at the given version, injecting learning, and persist."""
+    lessons = await retrieve_learning_context(session, question.text)
+    initial = GraphState(
+        question=question.text,
+        question_id=question.id,
+        version=version,
+        learning_context=lessons,
+    )
     result = await get_graph().ainvoke(
         initial, config={"configurable": {"session": session, "gateway": get_gateway()}}
     )
     final = _as_state(result)
 
     question.question_type = final.question_type
-    question.status = QuestionStatus.ANSWERED_V1.value
+    question.status = (
+        QuestionStatus.ANSWERED_V2.value if version >= 2 else QuestionStatus.ANSWERED_V1.value
+    )
 
     answer = AIAnswer(
         question_id=question.id,
-        version=1,
+        version=version,
         answer_text=final.answer_text or "",
         root_cause=final.root_cause,
         confidence=final.confidence,
@@ -59,6 +60,7 @@ async def answer_question(
             "refusal_reason": final.refusal_reason,
             "cited_source_refs": final.cited_source_refs,
             "iterations": final.iterations,
+            "learning_applied": len(lessons),
         },
     )
     session.add(answer)
@@ -76,8 +78,41 @@ async def answer_question(
             )
         )
     await session.commit()
-    log.info("answered_v1", question_id=question.id, answer_id=answer.id, refused=final.refused)
+    log.info(
+        "answered",
+        question_id=question.id,
+        version=version,
+        answer_id=answer.id,
+        lessons=len(lessons),
+    )
     return answer.id
+
+
+async def answer_question(
+    session: AsyncSession,
+    text: str,
+    *,
+    asker: str | None = None,
+    channel: str | None = None,
+) -> int:
+    """Create a new question and produce its V1 answer. Returns the AIAnswer id."""
+    question = Question(text=text, asker=asker, channel=channel, status=QuestionStatus.NEW.value)
+    session.add(question)
+    await session.flush()  # assign question.id
+    return await _run_and_persist(session, question, version=1)
+
+
+async def rerun_question(session: AsyncSession, question_id: int) -> int:
+    """Re-run an existing question to produce the next version (e.g. V2) with injected memory."""
+    question = await session.get(Question, question_id)
+    if question is None:
+        raise ValueError(f"question {question_id} not found")
+    highest = await session.scalar(
+        select(func.coalesce(func.max(AIAnswer.version), 0)).where(
+            AIAnswer.question_id == question_id
+        )
+    )
+    return await _run_and_persist(session, question, version=(highest or 0) + 1)
 
 
 async def get_answer(session: AsyncSession, answer_id: int) -> AIAnswer | None:

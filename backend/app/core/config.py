@@ -44,6 +44,7 @@ class Settings(BaseSettings):
 
     # Learning loop (Phase 4).
     learning_top_k: int = 3
+    learning_min_score: float = 0.3  # min similarity for a past lesson to be injected
 
 
 @lru_cache

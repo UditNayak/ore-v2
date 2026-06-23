@@ -1,0 +1,47 @@
+import { useState } from "react";
+
+interface Props {
+  pending: boolean;
+  onSubmit: (answerText: string, rootCause: string) => void;
+}
+
+/** Capture the expert ground-truth answer (the HITL step that drives learning). */
+export default function HumanAnswerForm({ pending, onSubmit }: Props) {
+  const [answer, setAnswer] = useState("");
+  const [rootCause, setRootCause] = useState("");
+
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (answer.trim()) onSubmit(answer.trim(), rootCause.trim());
+      }}
+      className="space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-5"
+    >
+      <h3 className="font-semibold text-amber-800">Expert answer (ground truth)</h3>
+      <p className="text-sm text-amber-700">
+        Provide the real answer. The Critic will compare it to V1 and capture what was missed.
+      </p>
+      <textarea
+        value={answer}
+        onChange={(e) => setAnswer(e.target.value)}
+        rows={3}
+        placeholder="The expert's answer…"
+        className="w-full resize-none rounded-lg border border-amber-300 p-2 focus:outline-none"
+      />
+      <input
+        value={rootCause}
+        onChange={(e) => setRootCause(e.target.value)}
+        placeholder="Root cause (optional)"
+        className="w-full rounded-lg border border-amber-300 p-2 focus:outline-none"
+      />
+      <button
+        type="submit"
+        disabled={pending || !answer.trim()}
+        className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-500 disabled:opacity-50"
+      >
+        {pending ? "Analyzing gap…" : "Submit expert answer"}
+      </button>
+    </form>
+  );
+}

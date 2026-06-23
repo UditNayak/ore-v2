@@ -13,6 +13,9 @@ class GraphState(BaseModel):
     question_id: int | None = None
     version: int = 1
 
+    # Retrieved-memory injection (Phase 4): lessons from past expert feedback, if any.
+    learning_context: list[str] = Field(default_factory=list)
+
     # Planner output
     question_type: str | None = None
     sources_to_check: list[str] = Field(default_factory=list)

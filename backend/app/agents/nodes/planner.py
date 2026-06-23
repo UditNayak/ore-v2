@@ -13,6 +13,7 @@ from app.agents.nodes.common import SEARCHABLE_SOURCES, context
 from app.agents.schemas import PlannerOutput
 from app.agents.state import GraphState
 from app.core.enums import QuestionType
+from app.learning.injection import learning_block
 from app.llm.structured import structured_call
 from app.llm.tiers import Tier
 
@@ -41,12 +42,8 @@ async def planner(state: GraphState, config: RunnableConfig) -> dict[str, Any]:
     """Set question_type and the ordered source list to investigate."""
     _, gateway = context(config)
     try:
-        out = await structured_call(
-            gateway.get_llm(Tier.CHEAP),
-            _SYSTEM,
-            _USER.format(question=state.question),
-            PlannerOutput,
-        )
+        user = _USER.format(question=state.question) + learning_block(state.learning_context)
+        out = await structured_call(gateway.get_llm(Tier.CHEAP), _SYSTEM, user, PlannerOutput)
         question_type = _normalize_question_type(out.question_type)
         picked = (s.strip().lower() for s in out.sources)
         sources = [s for s in picked if s in SEARCHABLE_SOURCES]
