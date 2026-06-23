@@ -1,0 +1,37 @@
+[
+  {
+    "sha": "a1b2c3d",
+    "message": "Revert \"billing: schema migration 004\" — integration test failing, unblocking main for v2.4",
+    "author": "Priya Nair",
+    "service": "billing-service",
+    "files": ["billing/migrations/004_orders.py"]
+  },
+  {
+    "sha": "b2c3d4e",
+    "message": "data-pipeline: add nightly backfill job (NIM-420)",
+    "author": "Sam Okoro",
+    "service": "data-pipeline",
+    "files": ["pipeline/jobs/backfill.py"]
+  },
+  {
+    "sha": "c3d4e5f",
+    "message": "notifications: switch to event-driven consumer on the message bus",
+    "author": "Ravi Patel",
+    "service": "notifications-service",
+    "files": ["notifications/consumer.py"]
+  },
+  {
+    "sha": "d4e5f6a",
+    "message": "auth: scaffold per-tenant rate limiter for Reporting v2 (NIM-455)",
+    "author": "Dan Reyes",
+    "service": "auth-service",
+    "files": ["auth/ratelimit.py"]
+  },
+  {
+    "sha": "e5f6a7b",
+    "message": "checkout: add connection pool saturation alert (INC-87 follow-up)",
+    "author": "Maya Singh",
+    "service": "checkout-service",
+    "files": ["checkout/alerts.py"]
+  }
+]

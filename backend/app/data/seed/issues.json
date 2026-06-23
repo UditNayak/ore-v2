@@ -1,0 +1,47 @@
+[
+  {
+    "key": "NIM-412",
+    "title": "Billing migration integration test failing",
+    "description": "The billing-service schema migration 004 fails the integration test suite intermittently on the orders join. This is blocking release v2.4. Migration commit reverted to keep main green until fixed.",
+    "status": "blocked",
+    "owner": "Priya Nair",
+    "labels": ["release-blocker", "v2.4", "billing"],
+    "service": "billing-service"
+  },
+  {
+    "key": "NIM-420",
+    "title": "Add nightly backfill job to data-pipeline",
+    "description": "Add a nightly backfill that recomputes historical aggregates. Note: opens many DB connections; needs its own pool.",
+    "status": "done",
+    "owner": "Sam Okoro",
+    "labels": ["data-pipeline"],
+    "service": "data-pipeline"
+  },
+  {
+    "key": "NIM-431",
+    "title": "Checkout latency incident follow-up",
+    "description": "Follow-up actions from INC-87: isolate data-pipeline connections and add connection-pool saturation alerts for the billing database.",
+    "status": "in_progress",
+    "owner": "Maya Singh",
+    "labels": ["incident", "checkout"],
+    "service": "checkout-service"
+  },
+  {
+    "key": "NIM-455",
+    "title": "Auth rate limiting for Reporting v2",
+    "description": "Reporting v2 needs per-tenant API rate limiting in auth-service before it can launch. Work in progress; this is the current blocker for the Reporting v2 milestone.",
+    "status": "in_progress",
+    "owner": "Dan Reyes",
+    "labels": ["reporting-v2", "auth"],
+    "service": "auth-service"
+  },
+  {
+    "key": "NIM-460",
+    "title": "Reporting v2 milestone",
+    "description": "Tracking milestone for Reporting v2. Blocked by NIM-455 (auth rate limiting). Cannot proceed until rate limiting lands.",
+    "status": "blocked",
+    "owner": "Lee Tan",
+    "labels": ["milestone", "reporting-v2"],
+    "service": null
+  }
+]

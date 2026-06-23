@@ -3,6 +3,7 @@
 Later phases extend the lifespan to run migrations and seed the synthetic dataset.
 """
 
+import asyncio
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
@@ -13,6 +14,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import health
 from app.core.config import get_settings
 from app.core.logging import configure_logging
+from app.db.migrate import run_migrations
+from app.db.seed import seed_if_empty
+from app.db.session import SessionLocal
 
 settings = get_settings()
 configure_logging(settings.log_level)
@@ -21,8 +25,12 @@ log = structlog.get_logger()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Application startup/shutdown hook (migrations + seeding land here later)."""
+    """On startup: apply migrations (sync, off the event loop) then seed the corpus."""
     log.info("startup", app=settings.app_name, environment=settings.environment)
+    await asyncio.to_thread(run_migrations)
+    async with SessionLocal() as session:
+        seeded = await seed_if_empty(session)
+    log.info("ready", seeded=seeded)
     yield
     log.info("shutdown")
 

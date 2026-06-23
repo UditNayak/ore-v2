@@ -1,0 +1,77 @@
+[
+  {
+    "id": "Q1",
+    "question": "Why was release v2.4 delayed?",
+    "question_type": "release_delay",
+    "expert_answer": "v2.4 was held because the billing-service schema migration failed its integration test (NIM-412). Priya Nair reverted the migration commit (a1b2c3d) to keep main green, so the billing change could not ship. Release manager Lee Tan moved the v2.4 target to the following week; it will ship once the integration test passes.",
+    "expected_root_cause": "A failing billing-service migration integration test (NIM-412) blocked the release.",
+    "expected_source_refs": ["NIM-412", "a1b2c3d", "t-rel-1"],
+    "cross_questions": [
+      {"q": "Who reverted the change and why?", "a": "Priya Nair reverted commit a1b2c3d to keep main green until the test is fixed."},
+      {"q": "Which service caused the delay?", "a": "billing-service (its schema migration)."},
+      {"q": "When will v2.4 ship?", "a": "The following week, once the NIM-412 integration test passes and the migration is re-landed."},
+      {"q": "Did checkout cause the delay?", "a": "No. The earlier checkout latency issue was unrelated; the delay was purely the billing migration test."}
+    ]
+  },
+  {
+    "id": "Q2",
+    "question": "What caused the checkout latency spike in INC-87?",
+    "question_type": "incident",
+    "expert_answer": "The data-pipeline nightly backfill job (NIM-420, commit b2c3d4e) ran during peak hours and opened a large number of connections, saturating the shared billing database connection pool. checkout-service shares that pool, so it was starved of connections, driving p99 latency from ~300ms to ~4s. The fix was to reschedule the backfill off-peak and give the pipeline its own connection pool.",
+    "expected_root_cause": "The data-pipeline backfill saturated the shared billing DB connection pool, starving checkout-service.",
+    "expected_source_refs": ["NIM-420", "NIM-431", "b2c3d4e", "t-inc-1"],
+    "cross_questions": [
+      {"q": "What was the fix?", "a": "Reschedule the backfill to off-peak and give data-pipeline its own connection pool."},
+      {"q": "Who owns the follow-up actions?", "a": "Maya Singh, tracked in NIM-431 (isolate connections, add pool saturation alerts)."},
+      {"q": "Why did checkout break when the pipeline was the cause?", "a": "checkout-service shares the billing DB connection pool, so pipeline connection exhaustion starved checkout."}
+    ]
+  },
+  {
+    "id": "Q3",
+    "question": "Who owns the notifications-service?",
+    "question_type": "ownership",
+    "expert_answer": "Ravi Patel owns notifications-service and is its release approver and primary on-call. Maya Singh is the backup on-call.",
+    "expected_root_cause": "Service ownership is recorded in the service catalog / on-call docs and reinforced in Slack.",
+    "expected_source_refs": ["t-ops-1", "c3d4e5f"],
+    "cross_questions": [
+      {"q": "Who is the backup?", "a": "Maya Singh."},
+      {"q": "Who approves releases for notifications-service?", "a": "The accountable owner, Ravi Patel."}
+    ]
+  },
+  {
+    "id": "Q4",
+    "question": "Why is the notifications-service event-driven?",
+    "question_type": "design_rationale",
+    "expert_answer": "It consumes domain events off the message bus instead of being called synchronously, for three reasons: decoupling producers from notification logic, resilience (events queue and retry if the notifier is down instead of failing the caller), and scalability (the queue absorbs spikes). The tradeoff is eventual consistency — a notification may lag the triggering action by a few seconds.",
+    "expected_root_cause": "Event-driven was chosen for decoupling, resilience/retry, and scalability, accepting eventual consistency.",
+    "expected_source_refs": ["t-arch-1", "c3d4e5f"],
+    "cross_questions": [
+      {"q": "What is the main tradeoff?", "a": "Eventual consistency — notifications may lag the action by a few seconds."},
+      {"q": "Should services call it synchronously?", "a": "No — synchronous calls into it are discouraged by design."}
+    ]
+  },
+  {
+    "id": "Q5",
+    "question": "What is blocking the Reporting v2 milestone?",
+    "question_type": "blocker",
+    "expert_answer": "The Reporting v2 milestone (NIM-460) is blocked by auth-service per-tenant API rate limiting (NIM-455), owned by Dan Reyes, who is scaffolding the rate limiter (commit d4e5f6a). NIM-460 stays blocked until NIM-455 lands.",
+    "expected_root_cause": "Auth per-tenant rate limiting (NIM-455) is not yet done; Reporting v2 (NIM-460) depends on it.",
+    "expected_source_refs": ["NIM-455", "NIM-460", "d4e5f6a", "t-eng-1"],
+    "cross_questions": [
+      {"q": "Who owns the blocking work?", "a": "Dan Reyes (auth-service)."},
+      {"q": "Which service must change first?", "a": "auth-service, to add per-tenant rate limiting."}
+    ]
+  },
+  {
+    "id": "Q6",
+    "question": "How were the billing-service problems behind the v2.4 delay and the INC-87 incident related?",
+    "question_type": "incident",
+    "expert_answer": "They were two separate billing-related problems. The v2.4 delay was caused by a failing billing schema migration test (NIM-412) — a code/test issue. INC-87 was an operational issue where the data-pipeline backfill saturated the billing database connection pool, which is shared by checkout. Both touch billing, but one is about the billing migration and the other is about the billing DB's shared connection pool; they are not the same root cause.",
+    "expected_root_cause": "Distinct causes: NIM-412 migration test failure vs. shared billing DB connection-pool exhaustion in INC-87.",
+    "expected_source_refs": ["NIM-412", "NIM-420", "t-rel-1", "t-inc-1"],
+    "cross_questions": [
+      {"q": "Are these the same root cause?", "a": "No — one is a failing migration test, the other is connection-pool exhaustion from the backfill."},
+      {"q": "What do they have in common?", "a": "Both involve billing-service (its migration, and its shared DB connection pool)."}
+    ]
+  }
+]

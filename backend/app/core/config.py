@@ -26,8 +26,18 @@ class Settings(BaseSettings):
     # (e.g. GROQ_API_KEY); we only need the path to the tier/provider config here.
     llm_config_path: str = "config/llm.yaml"
 
-    # Populated in later phases; declared here so config stays one place.
-    database_url: str | None = None
+    # Database (Phase 2). Async DSN used by the app; Alembic derives a sync DSN from it.
+    database_url: str = "postgresql+asyncpg://ore:ore@db:5432/ore"
+
+    # RAG / embeddings (Phase 2). EMBEDDING_DIM must match the model AND the pgvector column.
+    embedding_model: str = "BAAI/bge-small-en-v1.5"
+    embedding_dim: int = 384
+    rag_top_k: int = 5
+    seed_path: str = "app/data/seed"
+
+    # Retrieval / learning loop (used in later phases; declared here to keep config in one place).
+    retrieval_max_iters: int = 4
+    learning_top_k: int = 3
 
 
 @lru_cache

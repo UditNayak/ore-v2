@@ -1,0 +1,106 @@
+[
+  {
+    "thread_id": "t-rel-1", "channel": "releases", "author": "Priya Nair", "is_root": true,
+    "text": "Heads up: release v2.4 is blocked. The billing-service migration integration test (NIM-412) keeps failing on the orders join. I've reverted my migration commit a1b2c3d to keep main green."
+  },
+  {
+    "thread_id": "t-rel-1", "channel": "releases", "author": "Lee Tan", "is_root": false,
+    "text": "Thanks Priya. That means v2.4 slips. I'm moving the release target to next week and updating the calendar."
+  },
+  {
+    "thread_id": "t-rel-1", "channel": "releases", "author": "Maya Singh", "is_root": false,
+    "text": "Does this affect checkout at all? We had a separate latency issue earlier today."
+  },
+  {
+    "thread_id": "t-rel-1", "channel": "releases", "author": "Priya Nair", "is_root": false,
+    "text": "No, checkout is unrelated to the migration. This is purely the billing schema integration test failing."
+  },
+  {
+    "thread_id": "t-rel-1", "channel": "releases", "author": "Dan Reyes", "is_root": false,
+    "text": "Ping me if you want an extra reviewer on the migration fix."
+  },
+  {
+    "thread_id": "t-rel-1", "channel": "releases", "author": "Priya Nair", "is_root": false,
+    "text": "Will do. Once the integration test passes I'll re-land the migration and we can ship v2.4."
+  },
+
+  {
+    "thread_id": "t-inc-1", "channel": "incidents", "author": "Maya Singh", "is_root": true,
+    "text": "Checkout p99 latency spiked to about 4s starting around 14:00 UTC. Opening incident INC-87."
+  },
+  {
+    "thread_id": "t-inc-1", "channel": "incidents", "author": "Maya Singh", "is_root": false,
+    "text": "Error rates look fine, but requests are queuing waiting for database connections."
+  },
+  {
+    "thread_id": "t-inc-1", "channel": "incidents", "author": "Sam Okoro", "is_root": false,
+    "text": "That might be me. The new data-pipeline nightly backfill (NIM-420) kicked off around then."
+  },
+  {
+    "thread_id": "t-inc-1", "channel": "incidents", "author": "Sam Okoro", "is_root": false,
+    "text": "Confirmed: the backfill opened a huge number of connections and saturated the billing DB connection pool. checkout-service shares that pool, so it got starved of connections."
+  },
+  {
+    "thread_id": "t-inc-1", "channel": "incidents", "author": "Maya Singh", "is_root": false,
+    "text": "That lines up exactly with the timing. Can we stop the backfill?"
+  },
+  {
+    "thread_id": "t-inc-1", "channel": "incidents", "author": "Sam Okoro", "is_root": false,
+    "text": "Killed it. Latency is recovering now. I'll reschedule the backfill to off-peak and give the pipeline its own connection pool."
+  },
+  {
+    "thread_id": "t-inc-1", "channel": "incidents", "author": "Lee Tan", "is_root": false,
+    "text": "Great find, both of you. Please file the follow-up actions."
+  },
+  {
+    "thread_id": "t-inc-1", "channel": "incidents", "author": "Maya Singh", "is_root": false,
+    "text": "Tracking the follow-ups in NIM-431: isolate pipeline connections and add pool saturation alerts."
+  },
+
+  {
+    "thread_id": "t-eng-1", "channel": "engineering", "author": "Lee Tan", "is_root": true,
+    "text": "Where are we on the Reporting v2 milestone (NIM-460)?"
+  },
+  {
+    "thread_id": "t-eng-1", "channel": "engineering", "author": "Dan Reyes", "is_root": false,
+    "text": "Still blocked on auth rate limiting (NIM-455). Reporting v2 needs per-tenant API rate limits in auth-service before it can launch."
+  },
+  {
+    "thread_id": "t-eng-1", "channel": "engineering", "author": "Dan Reyes", "is_root": false,
+    "text": "I'm scaffolding the rate limiter now (commit d4e5f6a). ETA a few days."
+  },
+  {
+    "thread_id": "t-eng-1", "channel": "engineering", "author": "Lee Tan", "is_root": false,
+    "text": "Understood — so NIM-460 stays blocked until NIM-455 lands."
+  },
+
+  {
+    "thread_id": "t-arch-1", "channel": "architecture", "author": "Ravi Patel", "is_root": true,
+    "text": "Reminder: notifications-service is event-driven on purpose. It consumes domain events off the message bus rather than being called synchronously."
+  },
+  {
+    "thread_id": "t-arch-1", "channel": "architecture", "author": "Ravi Patel", "is_root": false,
+    "text": "Why: it decouples producers from notification logic, and if the notifier is down events queue and retry instead of failing the caller."
+  },
+  {
+    "thread_id": "t-arch-1", "channel": "architecture", "author": "Maya Singh", "is_root": false,
+    "text": "The tradeoff being eventual consistency, right?"
+  },
+  {
+    "thread_id": "t-arch-1", "channel": "architecture", "author": "Ravi Patel", "is_root": false,
+    "text": "Exactly. A notification may lag the triggering action by a few seconds. Please don't add synchronous calls into it."
+  },
+
+  {
+    "thread_id": "t-ops-1", "channel": "ops", "author": "Alex Kim", "is_root": true,
+    "text": "Newbie question: who owns notifications-service? I just got paged about it."
+  },
+  {
+    "thread_id": "t-ops-1", "channel": "ops", "author": "Maya Singh", "is_root": false,
+    "text": "Ravi Patel owns notifications-service. I'm the backup on-call for it."
+  },
+  {
+    "thread_id": "t-ops-1", "channel": "ops", "author": "Alex Kim", "is_root": false,
+    "text": "Thanks! Escalating to Ravi then."
+  }
+]
