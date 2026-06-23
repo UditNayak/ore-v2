@@ -34,7 +34,8 @@ async def test_issue_search_structured_filter(session) -> None:
     # Every returned issue must actually be blocked (structured filter applied).
     keys = {r.source_ref for r in results}
     blocked = {
-        i.key for i in (await session.execute(select(Issue).where(Issue.status == "blocked")))
+        i.key
+        for i in (await session.execute(select(Issue).where(Issue.status == "blocked")))
         .scalars()
         .all()
     }

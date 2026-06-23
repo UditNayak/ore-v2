@@ -7,11 +7,10 @@ we can assert the two things that actually matter and would fail silently:
 """
 
 import pytest
-from langchain_core.runnables import Runnable, RunnableLambda
-
 from app.llm.config import CandidateConfig, LLMConfig, load_llm_config
 from app.llm.gateway import LLMGateway
 from app.llm.tiers import Tier
+from langchain_core.runnables import Runnable, RunnableLambda
 
 
 def _config() -> LLMConfig:

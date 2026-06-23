@@ -14,10 +14,12 @@ tiers:
     - provider: groq
       model: llama-3.3-70b-versatile
       temperature: 0.2
+      max_tokens: 1024
   cheap:
     - provider: groq
       model: llama-3.1-8b-instant
       temperature: 0.0
+      max_tokens: 512
 
 # Phase 7 target (kept here as documentation; uncomment to upgrade):
 # tiers:

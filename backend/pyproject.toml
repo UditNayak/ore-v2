@@ -21,12 +21,11 @@ dependencies = [
     "alembic>=1.13",
     "pgvector>=0.3.6",
     "fastembed>=0.4",
+    # Phase 3 — LangGraph multi-agent orchestration
+    "langgraph>=0.2.40",
 ]
 
 [project.optional-dependencies]
-# Added incrementally per phase to keep early Docker builds fast.
-# phase2 (DB + RAG):    sqlalchemy[asyncio], asyncpg, alembic, pgvector
-# phase3 (agents):      langgraph, langchain
 dev = [
     "ruff>=0.7",
     "mypy>=1.13",

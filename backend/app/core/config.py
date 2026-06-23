@@ -35,8 +35,14 @@ class Settings(BaseSettings):
     rag_top_k: int = 5
     seed_path: str = "app/data/seed"
 
-    # Retrieval / learning loop (used in later phases; declared here to keep config in one place).
-    retrieval_max_iters: int = 4
+    # Agentic retrieval loop (Phase 3).
+    retrieval_max_iters: int = 3
+    rag_min_score: float = 0.3  # min cosine similarity for a doc chunk to count as evidence
+
+    # Guardrails (Phase 3).
+    confidence_threshold: float = 0.35  # below this, the answer is flagged low-confidence
+
+    # Learning loop (Phase 4).
     learning_top_k: int = 3
 
 

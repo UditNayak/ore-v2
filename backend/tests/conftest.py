@@ -9,12 +9,11 @@ import asyncio
 from collections.abc import AsyncIterator
 
 import pytest_asyncio
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.pool import NullPool
-
 from app.core.config import get_settings
 from app.db.migrate import run_migrations
 from app.db.seed import seed_if_empty
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 
 @pytest_asyncio.fixture
