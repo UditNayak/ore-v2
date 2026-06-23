@@ -1,26 +1,29 @@
 # LLM gateway configuration — provider/model tiers with automatic fallback.
-# See docs/decisions/0002-llm-gateway-multiprovider.md.
 #
 # Each tier is an ORDERED list of candidates: index 0 is primary, the rest are
 # fallbacks tried in order when a candidate fails. Nodes request a TIER, never a
 # specific provider, so providers can be swapped here without touching code.
 #
-# Default is Groq-only (free). To UPGRADE the smart tier to a frontier model, prepend one
-# candidate to `smart` (Groq stays as the automatic fallback) and set the provider key in .env —
-# NO code changes. Examples:
-#   - {provider: anthropic, model: claude-sonnet-4-6, temperature: 0.2}   # needs ANTHROPIC_API_KEY
-#   - {provider: openai,    model: gpt-4o,            temperature: 0.2}   # needs OPENAI_API_KEY
+# Active config: Anthropic Claude (Sonnet = smart, Haiku = cheap), with Groq as the
+# automatic fallback if Anthropic errors or is unavailable. Requires ANTHROPIC_API_KEY
+# (and GROQ_API_KEY for the fallback) in .env.
 
 tiers:
   smart:
-    # --- to upgrade, uncomment one line below (becomes primary; Groq below is the fallback) ---
-    # - {provider: anthropic, model: claude-sonnet-4-6, temperature: 0.2, max_tokens: 1024}
-    - provider: groq
+    - provider: anthropic
+      model: claude-sonnet-4-6
+      temperature: 0.2
+      max_tokens: 1024
+    - provider: groq            # fallback
       model: llama-3.3-70b-versatile
       temperature: 0.2
       max_tokens: 1024
   cheap:
-    - provider: groq
+    - provider: anthropic
+      model: claude-haiku-4-5
+      temperature: 0.0
+      max_tokens: 512
+    - provider: groq            # fallback
       model: llama-3.1-8b-instant
       temperature: 0.0
       max_tokens: 512

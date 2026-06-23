@@ -5,6 +5,7 @@ Groq tokens). Targets mirror the PDF Success Criteria. See docs/EVALUATION.md.
 """
 
 import math
+from typing import Any
 
 from app.rag.embeddings import embed_documents
 
@@ -65,3 +66,39 @@ def improvement(v1_composite: float, v2_composite: float) -> float:
     if gap <= 0:
         return 0.0
     return round((v2_composite - v1_composite) / gap, 4)
+
+
+def build_summary(results: list[dict[str, Any]], total: int) -> dict[str, Any]:
+    """Aggregate per-question results into the dashboard summary shape (None-safe).
+
+    Each result has v1/v2 score dicts (similarity/root_cause/coverage/composite, any may be None),
+    an `improvement`, and a `response_s`. Used by both the eval harness and interactive completions.
+    """
+    n = len(results) or 1
+
+    def avg(key: str, ver: str) -> float:
+        return round(sum(float(r[ver].get(key) or 0.0) for r in results) / n, 4)
+
+    response_times = [r["response_s"] for r in results if r.get("response_s") is not None]
+    summary: dict[str, Any] = {
+        "scenarios_run": len(results),
+        "scenario_coverage": round(len(results) / total, 4) if total else 0.0,
+        "v2_similarity": avg("similarity", "v2"),
+        "v2_root_cause": avg("root_cause", "v2"),
+        "v2_coverage": avg("coverage", "v2"),
+        "avg_improvement": round(sum(r["improvement"] for r in results) / n, 4),
+        "max_response_s": max(response_times) if response_times else None,
+    }
+    summary["targets"] = {
+        "similarity": summary["v2_similarity"] >= TARGET_SIMILARITY,
+        "root_cause": summary["v2_root_cause"] >= TARGET_ROOT_CAUSE,
+        "coverage": summary["v2_coverage"] >= TARGET_COVERAGE,
+        "improvement": summary["avg_improvement"] >= TARGET_IMPROVEMENT,
+        "response_time": (
+            (summary["max_response_s"] or 0) < TARGET_RESPONSE_S
+            if summary["max_response_s"] is not None
+            else None
+        ),
+        "scenario_coverage": summary["scenario_coverage"] >= TARGET_SCENARIO_COVERAGE,
+    }
+    return summary

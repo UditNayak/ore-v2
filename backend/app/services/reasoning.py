@@ -20,6 +20,7 @@ from app.core.enums import QuestionStatus
 from app.db.models import AIAnswer, AnswerEvidence, Question
 from app.learning.store import retrieve_learning_context
 from app.llm.gateway import get_gateway
+from app.llm.tiers import Tier
 
 log = structlog.get_logger("service.reasoning")
 
@@ -40,6 +41,9 @@ async def _run_and_persist(session: AsyncSession, question: Question, version: i
 
 
 async def _run_graph_and_persist(session: AsyncSession, question: Question, version: int) -> int:
+    gateway = get_gateway()
+    reasoner_model = gateway.primary_model(Tier.SMART)["model"]
+    planner_model = gateway.primary_model(Tier.CHEAP)["model"]
     lessons = await retrieve_learning_context(session, question.text)
     initial = GraphState(
         question=question.text,
@@ -49,7 +53,7 @@ async def _run_graph_and_persist(session: AsyncSession, question: Question, vers
     )
     started = time.monotonic()
     result = await get_graph().ainvoke(
-        initial, config={"configurable": {"session": session, "gateway": get_gateway()}}
+        initial, config={"configurable": {"session": session, "gateway": gateway}}
     )
     elapsed_s = round(time.monotonic() - started, 2)
     final = _as_state(result)
@@ -74,6 +78,8 @@ async def _run_graph_and_persist(session: AsyncSession, question: Question, vers
             "iterations": final.iterations,
             "learning_applied": len(lessons),
             "elapsed_s": elapsed_s,
+            "reasoner_model": reasoner_model,
+            "planner_model": planner_model,
         },
     )
     session.add(answer)

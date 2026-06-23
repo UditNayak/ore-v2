@@ -133,30 +133,35 @@ reasoning) and **resilience** (transparent failover) — all as config, no code 
 
 **1) Provider API keys** live in `.env` (read by the gateway from the environment):
 ```dotenv
-GROQ_API_KEY=...          # default provider (free)
-ANTHROPIC_API_KEY=        # optional — for the smart tier
-OPENAI_API_KEY=           # optional — for the smart tier
+ANTHROPIC_API_KEY=...     # for Claude (smart + cheap)
+GROQ_API_KEY=...          # for the Groq fallback (free; https://console.groq.com/keys)
+OPENAI_API_KEY=           # optional — if you point a tier at OpenAI
 ```
 
-**2) Tiers** in `config/llm.yaml` (default — Groq only, zero cost):
+**2) Tiers** in `config/llm.yaml` — current config: **Claude Sonnet (smart) + Haiku (cheap)**, each
+with Groq as the automatic fallback:
 ```yaml
 tiers:
   smart:
-    - { provider: groq, model: llama-3.3-70b-versatile, temperature: 0.2, max_tokens: 1024 }
+    - { provider: anthropic, model: claude-sonnet-4-6,        temperature: 0.2, max_tokens: 1024 }
+    - { provider: groq,      model: llama-3.3-70b-versatile,  temperature: 0.2, max_tokens: 1024 }  # fallback
   cheap:
-    - { provider: groq, model: llama-3.1-8b-instant,   temperature: 0.0, max_tokens: 512 }
+    - { provider: anthropic, model: claude-haiku-4-5,         temperature: 0.0, max_tokens: 512 }
+    - { provider: groq,      model: llama-3.1-8b-instant,     temperature: 0.0, max_tokens: 512 }   # fallback
 ```
 
-**3) Upgrade the smart tier to a frontier model** — add one candidate (it becomes primary; Groq
-stays as the automatic fallback) and set its key in `.env`. No code changes:
+**3) Switch providers — config only, no code changes.** Reorder/replace candidates; the first is
+primary, the rest are fallbacks. To run **Groq-only (free, zero cost)**:
 ```yaml
 tiers:
-  smart:
-    - { provider: anthropic, model: claude-sonnet-4-6, temperature: 0.2 }   # primary (needs ANTHROPIC_API_KEY)
-    - { provider: groq,      model: llama-3.3-70b-versatile }               # fallback
+  smart: [ { provider: groq, model: llama-3.3-70b-versatile, temperature: 0.2, max_tokens: 1024 } ]
+  cheap: [ { provider: groq, model: llama-3.1-8b-instant,   temperature: 0.0, max_tokens: 512 } ]
 ```
-Verify a tier end-to-end (calls both tiers live):
+
+After editing `.env` or `config/llm.yaml`, reload the backend and verify both tiers live (the smoke
+test logs the exact model that served each tier):
 ```bash
+docker compose up -d backend          # reloads .env + llm.yaml
 docker compose exec backend python -m app.llm.smoke
 ```
 
@@ -171,8 +176,10 @@ docker compose exec backend python -m app.llm.smoke
 2. Provide the **expert answer** (a "Load reference answer" button autofills it for seeded questions),
    optionally listing the **sources** you used (enables live evidence-coverage scoring).
 3. See the **Gap analysis** (what V1 missed) → click **Re-run → V2** and compare side-by-side, with a
-   confidence delta, new-evidence markers, and metric chips.
-4. Open **Dashboard** for accuracy/learning trends across evaluation runs.
+   confidence delta, new-evidence markers, metric chips, and a **model badge** (the Reasoner model
+   that wrote each answer). An agents→models legend at the top shows which model each component uses.
+4. Open **Dashboard** for accuracy/learning trends. **Each completed loop is recorded automatically**
+   (no command, no manual refresh); the eval CLI is an optional bulk path.
 
 **API** — the same loop via `curl`:
 ```bash
@@ -273,8 +280,12 @@ The corpus models a fictional SaaS company, **"Nimbus"** — five services with 
 release (`v2.4`), a production incident (`INC-87`), a blocked initiative (Reporting v2), plus
 interconnected issues, Slack threads, commits, and docs. It's small but cross-linked, so realistic
 questions require **joining facts across sources** (e.g. *"Why was v2.4 delayed?"* spans an issue, a
-Slack thread, and a revert commit). No real or sensitive data is used. Re-seed after edits:
+Slack thread, and a revert commit). No real or sensitive data is used.
 ```bash
+# Fresh start: clear all questions / lessons / eval runs (the corpus is kept)
+docker compose exec backend python -m app.db.reset
+
+# Re-seed the corpus after editing the data files
 docker compose exec backend python -m app.db.seed --force
 ```
 
@@ -290,6 +301,9 @@ docker compose exec backend pytest -q
 
 # Live LLM gateway smoke test (both tiers; needs GROQ_API_KEY)
 docker compose exec backend python -m app.llm.smoke
+
+# Fresh start — delete all questions, lessons, and eval runs (keeps the seeded corpus)
+docker compose exec backend python -m app.db.reset
 
 # Re-seed the synthetic corpus
 docker compose exec backend python -m app.db.seed --force

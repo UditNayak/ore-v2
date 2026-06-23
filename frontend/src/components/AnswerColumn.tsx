@@ -79,6 +79,14 @@ export default function AnswerColumn({
           </span>
         )}
         {delta != null && <DeltaChip delta={delta} />}
+        {answer.model && (
+          <span
+            className="rounded bg-violet-100 px-2 py-0.5 text-xs font-medium text-violet-700"
+            title="Reasoner model that produced this answer"
+          >
+            🧠 {answer.model}
+          </span>
+        )}
         {answer.elapsed_s != null && (
           <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
             {answer.elapsed_s}s

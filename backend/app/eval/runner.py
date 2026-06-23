@@ -82,41 +82,6 @@ async def _run_scenario(session: AsyncSession, scenario: Scenario) -> dict[str, 
     }
 
 
-def _aggregate(results: list[dict[str, Any]], total_scenarios: int) -> dict[str, Any]:
-    n = len(results) or 1
-
-    def avg(key: str, ver: str) -> float:
-        return round(sum(float(r[ver][key]) for r in results) / n, 4)
-
-    response_times = [r["response_s"] for r in results if r["response_s"] is not None]
-    summary = {
-        "scenarios_run": len(results),
-        "scenario_coverage": round(len(results) / total_scenarios, 4) if total_scenarios else 0.0,
-        "v2_similarity": avg("similarity", "v2"),
-        "v2_root_cause": avg("root_cause", "v2"),
-        "v2_coverage": avg("coverage", "v2"),
-        "avg_improvement": round(sum(r["improvement"] for r in results) / n, 4),
-        "max_response_s": max(response_times) if response_times else None,
-    }
-    summary["targets"] = {
-        "similarity": _check(summary["v2_similarity"], metrics.TARGET_SIMILARITY),
-        "root_cause": _check(summary["v2_root_cause"], metrics.TARGET_ROOT_CAUSE),
-        "coverage": _check(summary["v2_coverage"], metrics.TARGET_COVERAGE),
-        "improvement": _check(summary["avg_improvement"], metrics.TARGET_IMPROVEMENT),
-        "response_time": (
-            (summary["max_response_s"] or 0) < metrics.TARGET_RESPONSE_S
-            if summary["max_response_s"] is not None
-            else None
-        ),
-        "scenario_coverage": _check(summary["scenario_coverage"], metrics.TARGET_SCENARIO_COVERAGE),
-    }
-    return summary
-
-
-def _check(value: float, target: float) -> bool:
-    return value >= target
-
-
 def _render_markdown(summary: dict[str, Any], results: list[dict[str, Any]]) -> str:
     t = summary["targets"]
 
@@ -186,7 +151,7 @@ async def run_eval(
             if delay and i < len(scenarios) - 1:
                 await asyncio.sleep(delay)
 
-        summary = _aggregate(results, total)
+        summary = metrics.build_summary(results, total)
         session.add(EvalRun(summary=summary, results=results))
         await session.commit()
 

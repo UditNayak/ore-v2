@@ -42,6 +42,7 @@ class AnswerView(BaseModel):
     cited_source_refs: list[str]
     elapsed_s: float | None
     learning_applied: int
+    model: str | None  # the Reasoner model that produced this answer
     evidence: list[EvidenceView]
 
     @classmethod
@@ -63,6 +64,7 @@ class AnswerView(BaseModel):
             cited_source_refs=info.get("cited_source_refs", []),
             elapsed_s=info.get("elapsed_s"),
             learning_applied=int(info.get("learning_applied", 0)),
+            model=info.get("reasoner_model"),
             evidence=[
                 EvidenceView(
                     source_type=e.source_type,
@@ -165,6 +167,23 @@ class EvalRunView(BaseModel):
     id: int
     created_at: str
     summary: dict[str, Any]
+
+
+class AgentModelView(BaseModel):
+    """Which model a given agent/component uses (for the UI legend)."""
+
+    agent: str
+    tier: str
+    provider: str
+    model: str
+
+
+class ModelsView(BaseModel):
+    """The model behind each agent and tier (from config/llm.yaml)."""
+
+    cheap: str
+    smart: str
+    agents: list[AgentModelView]
 
 
 class ScenarioView(BaseModel):

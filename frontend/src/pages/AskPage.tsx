@@ -12,6 +12,7 @@ import type { Suggestion } from "../components/HumanAnswerForm";
 import ComparisonView from "../components/ComparisonView";
 import GapAnalysisCard from "../components/GapAnalysisCard";
 import HumanAnswerForm from "../components/HumanAnswerForm";
+import ModelsLegend from "../components/ModelsLegend";
 import Stepper from "../components/Stepper";
 
 export default function AskPage() {
@@ -93,6 +94,10 @@ export default function AskPage() {
           better V2.
         </p>
       </header>
+
+      <div className="mb-5">
+        <ModelsLegend />
+      </div>
 
       {questionId == null ? (
         <>

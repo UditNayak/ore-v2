@@ -74,6 +74,15 @@ class LLMGateway:
         self._cache[name] = runnable
         return runnable
 
+    def primary_model(self, tier: Tier | str) -> dict[str, str]:
+        """The first (primary) candidate's provider + model for a tier — for display."""
+        name = tier.value if isinstance(tier, Tier) else tier
+        candidates = self._config.tiers.get(name)
+        if not candidates:
+            raise KeyError(f"unknown tier '{name}'")
+        c = candidates[0]
+        return {"provider": c.provider, "model": c.model}
+
 
 def _quiet_litellm() -> None:
     """Silence LiteLLM's stdout chatter and enable rate-limit retries with backoff.

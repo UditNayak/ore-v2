@@ -65,10 +65,12 @@ export default function DashboardPage() {
 
       {!isLoading && (!data || data.length === 0) && (
         <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-slate-500">
-          No evaluation runs yet. Populate trends by running:
+          No data yet. Complete a loop on the <strong>Ask</strong> page — ask a
+          question, submit the expert answer, then <strong>Re-run → V2</strong>{" "}
+          — and it appears here automatically (no refresh needed). For a full
+          sweep over all seeded scenarios you can also run:
           <pre className="mt-2 rounded bg-slate-800 p-3 text-xs text-slate-100">
             docker compose exec backend python -m app.eval.run_eval --fresh
-            --delay 8
           </pre>
         </div>
       )}

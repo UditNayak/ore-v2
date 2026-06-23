@@ -18,6 +18,7 @@ from app.api.schemas import (
 from app.db.models import AIAnswer
 from app.db.session import get_session
 from app.services.learning import get_learning_event, submit_human_answer
+from app.services.metrics import record_question_run
 from app.services.questions import list_recent_questions, load_question_detail
 from app.services.reasoning import answer_question, get_answer, rerun_question
 from app.services.scoring import evidence_ids, score_answer
@@ -88,6 +89,8 @@ async def rerun(question_id: int, session: SessionDep) -> AnswerView:
         answer_id = await rerun_question(session, question_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+    # Record a Dashboard data point now that the loop (V1 -> expert -> V2) is complete.
+    await record_question_run(session, question_id)
     return await _answer_view(session, answer_id)
 
 

@@ -5,6 +5,7 @@ import type {
   EvalRun,
   HumanAnswerRequest,
   LearningEventView,
+  ModelsView,
   QuestionDetail,
   QuestionListItem,
   ScenarioView,
@@ -57,5 +58,11 @@ export async function getEvalRuns(): Promise<EvalRun[]> {
 /** Seeded scenarios (ground truth) — used to autoload the expert answer. */
 export async function getScenarios(): Promise<ScenarioView[]> {
   const res = await api.get<ScenarioView[]>("/scenarios");
+  return res.data;
+}
+
+/** The model behind each agent/tier (for the UI legend). */
+export async function getModels(): Promise<ModelsView> {
+  const res = await api.get<ModelsView>("/models");
   return res.data;
 }

@@ -23,7 +23,21 @@ export interface AnswerView {
   cited_source_refs: string[];
   elapsed_s: number | null;
   learning_applied: number;
+  model: string | null;
   evidence: EvidenceView[];
+}
+
+export interface AgentModel {
+  agent: string;
+  tier: string;
+  provider: string;
+  model: string;
+}
+
+export interface ModelsView {
+  cheap: string;
+  smart: string;
+  agents: AgentModel[];
 }
 
 export interface AskRequest {
