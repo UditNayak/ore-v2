@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     environment: str = "development"
     log_level: str = "INFO"
 
+    # LLM gateway (Phase 1). Provider keys are read by LiteLLM from the environment
+    # (e.g. GROQ_API_KEY); we only need the path to the tier/provider config here.
+    llm_config_path: str = "config/llm.yaml"
+
     # Populated in later phases; declared here so config stays one place.
     database_url: str | None = None
 
