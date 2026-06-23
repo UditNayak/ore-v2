@@ -144,6 +144,7 @@ class QuestionDetailView(BaseModel):
     v2: AnswerView | None
     v1_metrics: AnswerMetricsView | None
     v2_metrics: AnswerMetricsView | None
+    v1_missed_sources: list[str]  # expert sources V1 did not cite (deterministic gap)
     human_answer: HumanAnswerView | None
     learning_event: LearningEventView | None
 

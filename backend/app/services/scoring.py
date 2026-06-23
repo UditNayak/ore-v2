@@ -8,8 +8,10 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.db.models import AIAnswer, HumanAnswer, SlackMessage
 from app.eval import metrics
+from app.eval.judge import judge_root_cause
 
 
 async def evidence_ids(session: AsyncSession, answer: AIAnswer) -> set[str]:
@@ -25,19 +27,26 @@ async def evidence_ids(session: AsyncSession, answer: AIAnswer) -> set[str]:
 
 
 async def score_answer(
-    session: AsyncSession, answer: AIAnswer, human: HumanAnswer
+    session: AsyncSession,
+    answer: AIAnswer,
+    human: HumanAnswer,
+    *,
+    question_text: str = "",
 ) -> dict[str, Any]:
     """Compute similarity / root-cause / coverage of `answer` vs the human ground truth.
 
-    Coverage is None unless the expert declared `expected_sources`; root-cause is None unless
-    the expert gave a root cause. Composite is the mean of whatever is present.
+    Root-cause uses the LLM judge when enabled (better semantic match), else embedding cosine.
+    Coverage is None unless the expert declared `expected_sources`; root-cause is None unless the
+    expert gave a root cause. Composite is the mean of whatever is present.
     """
     similarity = metrics.text_similarity(answer.answer_text, human.answer_text)
-    root_cause = (
-        metrics.text_similarity(answer.root_cause or "", human.root_cause)
-        if human.root_cause
-        else None
-    )
+    root_cause: float | None = None
+    if human.root_cause:
+        root_cause = (
+            await judge_root_cause(answer.root_cause, human.root_cause, question_text)
+            if get_settings().use_llm_judge
+            else metrics.text_similarity(answer.root_cause or "", human.root_cause)
+        )
     coverage = (
         metrics.evidence_coverage(human.expected_sources, await evidence_ids(session, answer))
         if human.expected_sources

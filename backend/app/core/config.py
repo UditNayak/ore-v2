@@ -36,8 +36,8 @@ class Settings(BaseSettings):
     seed_path: str = "app/data/seed"
     qa_scenarios_path: str = "app/data/qa_scenarios.json"
 
-    # Agentic retrieval loop (Phase 3).
-    retrieval_max_iters: int = 3
+    # Agentic retrieval loop (Phase 3). Cap allows querying all 4 sources + a couple of refinements.
+    retrieval_max_iters: int = 6
     rag_min_score: float = 0.3  # min cosine similarity for a doc chunk to count as evidence
 
     # Guardrails (Phase 3).
@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     # Learning loop (Phase 4).
     learning_top_k: int = 3
     learning_min_score: float = 0.3  # min similarity for a past lesson to be injected
+
+    # Evaluation (Phase 5). Score root-cause with an LLM judge (semantic) vs embedding cosine.
+    use_llm_judge: bool = True
 
     # Observability (Phase 7) — LangSmith tracing of the graph + LLM calls (env-gated).
     langsmith_tracing: bool = False

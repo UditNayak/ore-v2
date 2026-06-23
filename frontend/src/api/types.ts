@@ -70,6 +70,7 @@ export interface QuestionDetail {
   v2: AnswerView | null;
   v1_metrics: AnswerMetrics | null;
   v2_metrics: AnswerMetrics | null;
+  v1_missed_sources: string[];
   human_answer: HumanAnswerView | null;
   learning_event: LearningEventView | null;
 }

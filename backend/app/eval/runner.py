@@ -14,9 +14,11 @@ import structlog
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.db.models import AIAnswer, EvalRun, LearningEvent
 from app.db.session import SessionLocal
 from app.eval import metrics
+from app.eval.judge import judge_root_cause
 from app.eval.scenarios import Scenario, load_scenarios
 from app.services.learning import submit_human_answer
 from app.services.reasoning import answer_question, get_answer, rerun_question
@@ -29,11 +31,14 @@ REPORT_DIR = Path("eval_results")
 
 async def _score(session: AsyncSession, scenario: Scenario, answer: AIAnswer) -> dict[str, Any]:
     similarity = metrics.text_similarity(answer.answer_text, scenario.expert_answer)
-    root_cause = (
-        metrics.text_similarity(answer.root_cause or "", scenario.expected_root_cause)
-        if scenario.expected_root_cause
-        else 0.0
-    )
+    if not scenario.expected_root_cause:
+        root_cause = 0.0
+    elif get_settings().use_llm_judge:
+        root_cause = await judge_root_cause(
+            answer.root_cause, scenario.expected_root_cause, scenario.question
+        )
+    else:
+        root_cause = metrics.text_similarity(answer.root_cause or "", scenario.expected_root_cause)
     coverage = metrics.evidence_coverage(
         scenario.expected_source_refs, await evidence_ids(session, answer)
     )

@@ -51,7 +51,17 @@ def composite_accuracy(similarity: float, root_cause: float, coverage: float) ->
 
 
 def improvement(v1_composite: float, v2_composite: float) -> float:
-    """Relative increase in composite accuracy from V1 to V2 (0.20 == +20%)."""
-    if v1_composite == 0:
-        return 1.0 if v2_composite > 0 else 0.0
-    return round((v2_composite - v1_composite) / v1_composite, 4)
+    """Share of the remaining gap-to-perfect that V2 closes over V1 ("error reduction").
+
+    improvement = (v2 - v1) / (1 - v1).
+
+    Why this rather than the naive relative gain (v2 - v1) / v1: when the V1 baseline is already
+    strong (often ~0.8 here), a small absolute gain is a *large* fraction of the headroom that was
+    left. E.g. 0.80 -> 0.85 closes 25% of the remaining gap, but reads as only +6% relative-to-base.
+    Gap-closed is the honest way to credit learning against a high baseline. Negative on regression;
+    0 if V1 is already perfect.
+    """
+    gap = 1.0 - v1_composite
+    if gap <= 0:
+        return 0.0
+    return round((v2_composite - v1_composite) / gap, 4)

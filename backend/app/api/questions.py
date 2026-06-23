@@ -20,7 +20,7 @@ from app.db.session import get_session
 from app.services.learning import get_learning_event, submit_human_answer
 from app.services.questions import list_recent_questions, load_question_detail
 from app.services.reasoning import answer_question, get_answer, rerun_question
-from app.services.scoring import score_answer
+from app.services.scoring import evidence_ids, score_answer
 
 router = APIRouter(prefix="/questions", tags=["questions"])
 
@@ -106,7 +106,13 @@ async def read_question(question_id: int, session: SessionDep) -> QuestionDetail
     async def metrics_for(answer: AIAnswer | None) -> AnswerMetricsView | None:
         if answer is None or human is None:
             return None
-        return AnswerMetricsView(**await score_answer(session, answer, human))
+        return AnswerMetricsView(**await score_answer(session, answer, human, question_text=text))
+
+    # Deterministic gap: expert sources that V1's evidence did not cover.
+    v1_missed_sources: list[str] = []
+    if v1 is not None and human is not None and human.expected_sources:
+        covered = {e.lower() for e in await evidence_ids(session, v1)}
+        v1_missed_sources = [s for s in human.expected_sources if s.strip().lower() not in covered]
 
     return QuestionDetailView(
         id=detail.question.id,
@@ -117,6 +123,7 @@ async def read_question(question_id: int, session: SessionDep) -> QuestionDetail
         v2=AnswerView.from_orm_answer(v2, text) if v2 else None,
         v1_metrics=await metrics_for(v1),
         v2_metrics=await metrics_for(v2),
+        v1_missed_sources=v1_missed_sources,
         human_answer=HumanAnswerView.from_model(human) if human else None,
         learning_event=(
             LearningEventView.from_model(detail.learning_event) if detail.learning_event else None

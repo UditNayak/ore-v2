@@ -11,7 +11,13 @@ from typing import Any
 import structlog
 from langchain_core.runnables import RunnableConfig
 
-from app.agents.nodes.common import context, dedup_evidence, format_evidence, run_tool
+from app.agents.nodes.common import (
+    SEARCHABLE_SOURCES,
+    context,
+    dedup_evidence,
+    format_evidence_brief,
+    run_tool,
+)
 from app.agents.schemas import SufficiencyVerdict
 from app.agents.state import GraphState
 from app.core.config import get_settings
@@ -49,13 +55,25 @@ async def investigator(state: GraphState, config: RunnableConfig) -> dict[str, A
         verdict = await structured_call(
             gateway.get_llm(Tier.CHEAP),
             _SYSTEM,
-            _USER.format(question=state.question, evidence=format_evidence(evidence)),
+            _USER.format(question=state.question, evidence=format_evidence_brief(evidence)),
             SufficiencyVerdict,
         )
     except (ValueError, KeyError) as exc:
         # If the judge fails, don't stop early — let the loop exhaust sources / hit the cap.
         log.warning("sufficiency_fallback", error=str(exc))
         verdict = SufficiencyVerdict(sufficient=False)
+    queried = [*state.queried_sources, source]
+
+    # If the planned sources are now exhausted but evidence is still insufficient, broaden to any
+    # source not yet consulted — an expert keeps looking rather than stopping at the first plan.
+    # This recovers sources the (cheap-tier) Planner under-selected, improving evidence coverage.
+    sources_to_check = state.sources_to_check
+    if not verdict.sufficient and not [s for s in sources_to_check if s not in queried]:
+        untried = [s for s in SEARCHABLE_SOURCES if s not in queried]
+        if untried:
+            sources_to_check = list(dict.fromkeys([*sources_to_check, *untried]))
+            log.info("broadened_sources", added=untried)
+
     log.info(
         "investigated",
         source=source,
@@ -66,7 +84,8 @@ async def investigator(state: GraphState, config: RunnableConfig) -> dict[str, A
     )
     return {
         "evidence": evidence,
-        "queried_sources": [*state.queried_sources, source],
+        "queried_sources": queried,
+        "sources_to_check": sources_to_check,
         "iterations": iterations,
         "sufficient": verdict.sufficient,
         "missing": verdict.missing,

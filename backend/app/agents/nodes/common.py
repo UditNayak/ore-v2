@@ -51,3 +51,16 @@ def format_evidence(evidence: list[Evidence]) -> str:
     if not evidence:
         return "(no evidence gathered yet)"
     return "\n".join(f"- [{e.source_type}:{e.source_ref}] {e.snippet[:220]}" for e in evidence)
+
+
+def format_evidence_brief(evidence: list[Evidence]) -> str:
+    """Token-frugal rendering (id + title only, no snippets) for the sufficiency judge.
+
+    The judge only needs to know *what* has been found, not the full text — keeping this small
+    matters on rate-limited free tiers where the loop makes several calls per question.
+    """
+    if not evidence:
+        return "(no evidence gathered yet)"
+    return "\n".join(
+        f"- [{e.source_type}:{e.source_ref}] {e.title or ''}".rstrip() for e in evidence
+    )

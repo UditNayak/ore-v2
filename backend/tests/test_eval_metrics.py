@@ -43,5 +43,8 @@ def test_evidence_coverage_matches_slack_thread() -> None:
 
 def test_composite_and_improvement() -> None:
     assert composite_accuracy(0.9, 0.6, 0.6) == 0.7
-    assert improvement(0.5, 0.6) == 0.2  # +20%
-    assert improvement(0.0, 0.5) == 1.0
+    # gap-closed: (v2 - v1) / (1 - v1)
+    assert improvement(0.5, 0.6) == 0.2  # 0.1 / 0.5
+    assert improvement(0.8, 0.85) == 0.25  # high baseline → 0.05 / 0.2
+    assert improvement(0.9, 0.9) == 0.0  # no change
+    assert improvement(1.0, 1.0) == 0.0  # already perfect → no headroom

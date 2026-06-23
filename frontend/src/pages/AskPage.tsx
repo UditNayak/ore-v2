@@ -10,17 +10,9 @@ import {
 } from "../api/questions";
 import type { Suggestion } from "../components/HumanAnswerForm";
 import ComparisonView from "../components/ComparisonView";
+import GapAnalysisCard from "../components/GapAnalysisCard";
 import HumanAnswerForm from "../components/HumanAnswerForm";
-import LearningEventCard from "../components/LearningEventCard";
 import Stepper from "../components/Stepper";
-
-const SAMPLE_QUESTIONS = [
-  "Why was release v2.4 delayed?",
-  "What caused the checkout latency spike in INC-87?",
-  "Who owns the notifications-service?",
-  "Why is the notifications-service event-driven?",
-  "What is blocking the Reporting v2 milestone?",
-];
 
 export default function AskPage() {
   const qc = useQueryClient();
@@ -104,16 +96,27 @@ export default function AskPage() {
 
       {questionId == null ? (
         <>
-          <div className="mb-3 flex flex-wrap gap-2">
-            {SAMPLE_QUESTIONS.map((q) => (
-              <button
-                key={q}
-                onClick={() => submit(q)}
-                className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs text-slate-600 hover:bg-slate-100"
-              >
-                {q}
-              </button>
-            ))}
+          <div className="mb-4">
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Pick a sample question
+            </label>
+            <select
+              value=""
+              onChange={(e) => {
+                if (e.target.value) submit(e.target.value);
+              }}
+              disabled={ask.isPending}
+              className="w-full rounded-lg border border-slate-300 bg-white p-2.5 text-sm focus:border-slate-500 focus:outline-none"
+            >
+              <option value="" disabled>
+                Choose a question…
+              </option>
+              {(scenarios.data ?? []).map((s) => (
+                <option key={s.id} value={s.question}>
+                  {s.question}
+                </option>
+              ))}
+            </select>
           </div>
           <form
             onSubmit={(e) => {
@@ -121,6 +124,9 @@ export default function AskPage() {
               submit(text);
             }}
           >
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+              …or ask your own
+            </label>
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -175,7 +181,10 @@ export default function AskPage() {
                     </p>
                   )}
               </div>
-              <LearningEventCard event={d.learning_event} />
+              <GapAnalysisCard
+                event={d.learning_event}
+                missedSources={d.v1_missed_sources}
+              />
             </div>
           ) : (
             <HumanAnswerForm

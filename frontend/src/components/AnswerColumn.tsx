@@ -1,4 +1,5 @@
 import type { AnswerMetrics, AnswerView } from "../api/types";
+import Collapsible from "./Collapsible";
 import ConfidenceBar from "./ConfidenceBar";
 import EvidenceList from "./EvidenceList";
 import Section from "./Section";
@@ -109,17 +110,19 @@ export default function AnswerColumn({
         <Section label="Root cause">{answer.root_cause}</Section>
       )}
       {answer.reasoning_trace.length > 0 && (
-        <Section label="Reasoning trace">
-          <ol className="list-decimal space-y-1 pl-5 text-slate-700">
+        <Collapsible
+          title={`Reasoning trace · ${answer.reasoning_trace.length} steps`}
+        >
+          <ol className="list-decimal space-y-1 pl-5 text-sm text-slate-700">
             {answer.reasoning_trace.map((step, i) => (
               <li key={i}>{step}</li>
             ))}
           </ol>
-        </Section>
+        </Collapsible>
       )}
-      <Section label={`Evidence (${answer.evidence.length})`}>
+      <Collapsible title={`Evidence · ${answer.evidence.length}`}>
         <EvidenceList evidence={answer.evidence} newRefs={newRefs} />
-      </Section>
+      </Collapsible>
     </div>
   );
 }
