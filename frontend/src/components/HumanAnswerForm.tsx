@@ -18,10 +18,15 @@ export default function HumanAnswerForm({ pending, onSubmit }: Props) {
       }}
       className="space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-5"
     >
-      <h3 className="font-semibold text-amber-800">Expert answer (ground truth)</h3>
-      <p className="text-sm text-amber-700">
-        Provide the real answer. The Critic will compare it to V1 and capture what was missed.
-      </p>
+      <div>
+        <h3 className="font-semibold text-amber-800">
+          🧑 Expert answer (ground truth)
+        </h3>
+        <p className="text-sm text-amber-700">
+          Provide the real answer — the Critic compares it to V1 and captures
+          what was missed.
+        </p>
+      </div>
       <textarea
         value={answer}
         onChange={(e) => setAnswer(e.target.value)}

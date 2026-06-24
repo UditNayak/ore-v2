@@ -1,5 +1,10 @@
 import { api } from "./client";
-import type { AnswerView, AskRequest, HumanAnswerRequest, LearningEventView } from "./types";
+import type {
+  AnswerView,
+  AskRequest,
+  HumanAnswerRequest,
+  LearningEventView,
+} from "./types";
 
 /** Submit a question and get the V1 answer (runs the multi-agent graph server-side). */
 export async function askQuestion(payload: AskRequest): Promise<AnswerView> {
@@ -12,7 +17,10 @@ export async function submitHumanAnswer(
   questionId: number,
   payload: HumanAnswerRequest,
 ): Promise<LearningEventView> {
-  const res = await api.post<LearningEventView>(`/questions/${questionId}/human-answer`, payload);
+  const res = await api.post<LearningEventView>(
+    `/questions/${questionId}/human-answer`,
+    payload,
+  );
   return res.data;
 }
 
