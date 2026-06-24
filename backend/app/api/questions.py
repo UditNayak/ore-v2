@@ -6,17 +6,21 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.schemas import (
+    AnswerMetricsView,
     AnswerView,
     AskRequest,
     HumanAnswerRequest,
     HumanAnswerView,
     LearningEventView,
     QuestionDetailView,
+    QuestionListItem,
 )
+from app.db.models import AIAnswer
 from app.db.session import get_session
 from app.services.learning import get_learning_event, submit_human_answer
-from app.services.questions import load_question_detail
+from app.services.questions import list_recent_questions, load_question_detail
 from app.services.reasoning import answer_question, get_answer, rerun_question
+from app.services.scoring import score_answer
 
 router = APIRouter(prefix="/questions", tags=["questions"])
 
@@ -39,6 +43,22 @@ async def ask_question(payload: AskRequest, session: SessionDep) -> AnswerView:
     return await _answer_view(session, answer_id)
 
 
+@router.get("", response_model=list[QuestionListItem])
+async def list_questions(session: SessionDep) -> list[QuestionListItem]:
+    """Recent questions (the feed)."""
+    rows = await list_recent_questions(session)
+    return [
+        QuestionListItem(
+            id=q.id,
+            text=q.text,
+            status=q.status,
+            question_type=q.question_type,
+            versions=versions,
+        )
+        for q, versions in rows
+    ]
+
+
 @router.post("/{question_id}/human-answer", response_model=LearningEventView, status_code=201)
 async def add_human_answer(
     question_id: int, payload: HumanAnswerRequest, session: SessionDep
@@ -51,6 +71,7 @@ async def add_human_answer(
             answer_text=payload.answer_text,
             root_cause=payload.root_cause,
             expert_name=payload.expert_name,
+            expected_sources=payload.expected_sources,
         )
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
@@ -80,6 +101,13 @@ async def read_question(question_id: int, session: SessionDep) -> QuestionDetail
     text = detail.question.text
     v1 = next((a for a in detail.ai_answers if a.version == 1), None)
     v2 = next((a for a in reversed(detail.ai_answers) if a.version >= 2), None)
+    human = detail.human_answer
+
+    async def metrics_for(answer: AIAnswer | None) -> AnswerMetricsView | None:
+        if answer is None or human is None:
+            return None
+        return AnswerMetricsView(**await score_answer(session, answer, human))
+
     return QuestionDetailView(
         id=detail.question.id,
         text=text,
@@ -87,9 +115,9 @@ async def read_question(question_id: int, session: SessionDep) -> QuestionDetail
         question_type=detail.question.question_type,
         v1=AnswerView.from_orm_answer(v1, text) if v1 else None,
         v2=AnswerView.from_orm_answer(v2, text) if v2 else None,
-        human_answer=(
-            HumanAnswerView.from_model(detail.human_answer) if detail.human_answer else None
-        ),
+        v1_metrics=await metrics_for(v1),
+        v2_metrics=await metrics_for(v2),
+        human_answer=HumanAnswerView.from_model(human) if human else None,
         learning_event=(
             LearningEventView.from_model(detail.learning_event) if detail.learning_event else None
         ),

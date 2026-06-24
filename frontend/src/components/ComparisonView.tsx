@@ -1,9 +1,11 @@
-import type { AnswerView } from "../api/types";
+import type { AnswerMetrics, AnswerView } from "../api/types";
 import AnswerColumn from "./AnswerColumn";
 
 interface Props {
   v1: AnswerView;
   v2: AnswerView | null;
+  v1Metrics?: AnswerMetrics | null;
+  v2Metrics?: AnswerMetrics | null;
   canRerun: boolean;
   rerunPending: boolean;
   onRerun: () => void;
@@ -13,6 +15,8 @@ interface Props {
 export default function ComparisonView({
   v1,
   v2,
+  v1Metrics,
+  v2Metrics,
   canRerun,
   rerunPending,
   onRerun,
@@ -27,7 +31,12 @@ export default function ComparisonView({
 
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      <AnswerColumn answer={v1} label="V1 · before learning" accent="slate" />
+      <AnswerColumn
+        answer={v1}
+        label="V1 · before learning"
+        accent="slate"
+        metrics={v1Metrics}
+      />
       {v2 ? (
         <AnswerColumn
           answer={v2}
@@ -35,6 +44,7 @@ export default function ComparisonView({
           accent="emerald"
           delta={delta}
           newRefs={newRefs}
+          metrics={v2Metrics}
         />
       ) : (
         <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">

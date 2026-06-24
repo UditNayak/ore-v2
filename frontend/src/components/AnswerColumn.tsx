@@ -1,4 +1,4 @@
-import type { AnswerView } from "../api/types";
+import type { AnswerMetrics, AnswerView } from "../api/types";
 import ConfidenceBar from "./ConfidenceBar";
 import EvidenceList from "./EvidenceList";
 import Section from "./Section";
@@ -9,6 +9,31 @@ interface Props {
   accent: "slate" | "emerald";
   delta?: number | null;
   newRefs?: Set<string>;
+  metrics?: AnswerMetrics | null;
+}
+
+function ScoreChip({
+  label,
+  value,
+  target,
+}: {
+  label: string;
+  value: number | null;
+  target: number;
+}) {
+  if (value == null) return null;
+  const ok = value >= target;
+  const cls = ok
+    ? "bg-emerald-100 text-emerald-700"
+    : "bg-red-100 text-red-700";
+  return (
+    <span
+      className={`rounded px-1.5 py-0.5 text-xs font-medium ${cls}`}
+      title={`target ≥ ${target}`}
+    >
+      {label} {value.toFixed(2)}
+    </span>
+  );
 }
 
 const ACCENT: Record<Props["accent"], string> = {
@@ -39,6 +64,7 @@ export default function AnswerColumn({
   accent,
   delta,
   newRefs,
+  metrics,
 }: Props) {
   return (
     <div
@@ -52,12 +78,29 @@ export default function AnswerColumn({
           </span>
         )}
         {delta != null && <DeltaChip delta={delta} />}
+        {answer.elapsed_s != null && (
+          <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
+            {answer.elapsed_s}s
+          </span>
+        )}
         {answer.refused && (
           <span className="rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
             refused
           </span>
         )}
       </div>
+
+      {metrics && (
+        <div className="flex flex-wrap gap-1.5">
+          <ScoreChip label="sim" value={metrics.similarity} target={0.75} />
+          <ScoreChip
+            label="root-cause"
+            value={metrics.root_cause}
+            target={0.7}
+          />
+          <ScoreChip label="coverage" value={metrics.coverage} target={0.8} />
+        </div>
+      )}
 
       <ConfidenceBar value={answer.confidence} />
 

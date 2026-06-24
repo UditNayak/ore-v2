@@ -14,28 +14,17 @@ import structlog
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import AIAnswer, EvalRun, LearningEvent, SlackMessage
+from app.db.models import AIAnswer, EvalRun, LearningEvent
 from app.db.session import SessionLocal
 from app.eval import metrics
 from app.eval.scenarios import Scenario, load_scenarios
 from app.services.learning import submit_human_answer
 from app.services.reasoning import answer_question, get_answer, rerun_question
+from app.services.scoring import evidence_ids
 
 log = structlog.get_logger("eval")
 
 REPORT_DIR = Path("eval_results")
-
-
-async def _evidence_ids(session: AsyncSession, answer: AIAnswer) -> set[str]:
-    """Stable identifiers for an answer's evidence (incl. slack thread ids)."""
-    ids: set[str] = set()
-    for ev in answer.evidence:
-        ids.add(ev.source_ref)
-        if ev.source_type == "slack" and ev.source_ref.isdigit():
-            msg = await session.get(SlackMessage, int(ev.source_ref))
-            if msg:
-                ids.add(msg.thread_id)
-    return ids
 
 
 async def _score(session: AsyncSession, scenario: Scenario, answer: AIAnswer) -> dict[str, Any]:
@@ -46,7 +35,7 @@ async def _score(session: AsyncSession, scenario: Scenario, answer: AIAnswer) ->
         else 0.0
     )
     coverage = metrics.evidence_coverage(
-        scenario.expected_source_refs, await _evidence_ids(session, answer)
+        scenario.expected_source_refs, await evidence_ids(session, answer)
     )
     return {
         "similarity": similarity,
@@ -71,6 +60,7 @@ async def _run_scenario(session: AsyncSession, scenario: Scenario) -> dict[str, 
         answer_text=scenario.expert_answer,
         root_cause=scenario.expected_root_cause,
         expert_name="eval",
+        expected_sources=scenario.expected_source_refs,
     )
     v2_id = await rerun_question(session, v1.question_id)
     v2 = await get_answer(session, v2_id)

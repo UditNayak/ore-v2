@@ -82,6 +82,8 @@ class HumanAnswerRequest(BaseModel):
     answer_text: str
     root_cause: str | None = None
     expert_name: str | None = None
+    # Source refs the expert used (issue keys / commit shas / slack thread ids) — drives coverage.
+    expected_sources: list[str] = []
 
 
 class HumanAnswerView(BaseModel):
@@ -90,10 +92,25 @@ class HumanAnswerView(BaseModel):
     answer_text: str
     root_cause: str | None
     expert_name: str | None
+    expected_sources: list[str]
 
     @classmethod
     def from_model(cls, ha: HumanAnswer) -> "HumanAnswerView":
-        return cls(answer_text=ha.answer_text, root_cause=ha.root_cause, expert_name=ha.expert_name)
+        return cls(
+            answer_text=ha.answer_text,
+            root_cause=ha.root_cause,
+            expert_name=ha.expert_name,
+            expected_sources=ha.expected_sources,
+        )
+
+
+class AnswerMetricsView(BaseModel):
+    """Live quality scores of an answer vs the expert ground truth (None if not measurable)."""
+
+    similarity: float | None
+    root_cause: float | None
+    coverage: float | None
+    composite: float | None
 
 
 class LearningEventView(BaseModel):
@@ -125,5 +142,25 @@ class QuestionDetailView(BaseModel):
     question_type: str | None
     v1: AnswerView | None
     v2: AnswerView | None
+    v1_metrics: AnswerMetricsView | None
+    v2_metrics: AnswerMetricsView | None
     human_answer: HumanAnswerView | None
     learning_event: LearningEventView | None
+
+
+class QuestionListItem(BaseModel):
+    """A row in the question feed."""
+
+    id: int
+    text: str
+    status: str
+    question_type: str | None
+    versions: int  # number of AI answers generated (1 = V1 only, 2 = has V2)
+
+
+class EvalRunView(BaseModel):
+    """One evaluation run's aggregate summary (for the dashboard trends)."""
+
+    id: int
+    created_at: str
+    summary: dict[str, Any]

@@ -150,6 +150,9 @@ class HumanAnswer(Base):
     answer_text: Mapped[str] = mapped_column(Text)
     root_cause: Mapped[str | None] = mapped_column(Text, nullable=True)
     expert_name: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Source refs the expert relied on (issue keys / commit shas / slack thread ids) — enables
+    # live evidence-coverage scoring for ad-hoc questions, not just seeded scenarios.
+    expected_sources: Mapped[list[str]] = mapped_column(JSONB, default=list)
     created_at: Mapped[datetime] = created_at_column()
 
     question: Mapped[Question] = relationship(back_populates="human_answers")

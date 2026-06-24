@@ -46,3 +46,22 @@ async def load_question_detail(session: AsyncSession, question_id: int) -> Quest
         human_answer=human_answer,
         learning_event=learning_event,
     )
+
+
+async def list_recent_questions(
+    session: AsyncSession, limit: int = 50
+) -> list[tuple[Question, int]]:
+    """Most-recent questions with their AI-answer count (for the feed)."""
+    questions = (
+        (
+            await session.execute(
+                select(Question)
+                .order_by(Question.id.desc())
+                .limit(limit)
+                .options(selectinload(Question.ai_answers))
+            )
+        )
+        .scalars()
+        .all()
+    )
+    return [(q, len(q.ai_answers)) for q in questions]

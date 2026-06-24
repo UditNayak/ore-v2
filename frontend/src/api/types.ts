@@ -21,6 +21,8 @@ export interface AnswerView {
   refused: boolean;
   refusal_reason: string | null;
   cited_source_refs: string[];
+  elapsed_s: number | null;
+  learning_applied: number;
   evidence: EvidenceView[];
 }
 
@@ -34,6 +36,7 @@ export interface HumanAnswerRequest {
   answer_text: string;
   root_cause?: string;
   expert_name?: string;
+  expected_sources?: string[];
 }
 
 export interface LearningEventView {
@@ -42,4 +45,45 @@ export interface LearningEventView {
   missed_sources: string[];
   missed_reasoning: string | null;
   corrected_root_cause: string | null;
+}
+
+export interface AnswerMetrics {
+  similarity: number | null;
+  root_cause: number | null;
+  coverage: number | null;
+  composite: number | null;
+}
+
+export interface HumanAnswerView {
+  answer_text: string;
+  root_cause: string | null;
+  expert_name: string | null;
+  expected_sources: string[];
+}
+
+export interface QuestionDetail {
+  id: number;
+  text: string;
+  status: string;
+  question_type: string | null;
+  v1: AnswerView | null;
+  v2: AnswerView | null;
+  v1_metrics: AnswerMetrics | null;
+  v2_metrics: AnswerMetrics | null;
+  human_answer: HumanAnswerView | null;
+  learning_event: LearningEventView | null;
+}
+
+export interface QuestionListItem {
+  id: number;
+  text: string;
+  status: string;
+  question_type: string | null;
+  versions: number;
+}
+
+export interface EvalRun {
+  id: number;
+  created_at: string;
+  summary: Record<string, number | null>;
 }

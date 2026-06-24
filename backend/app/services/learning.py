@@ -34,10 +34,13 @@ async def submit_human_answer(
     answer_text: str,
     root_cause: str | None = None,
     expert_name: str | None = None,
+    expected_sources: list[str] | None = None,
 ) -> int:
     """Record the expert answer, run gap analysis, and persist a learning event.
 
     Returns the learning event id. This is the HITL step that drives V1 -> V2 improvement.
+    `expected_sources` (issue keys / commit shas / slack thread ids) enables evidence-coverage
+    scoring for this question.
     """
     question = await session.get(Question, question_id)
     if question is None:
@@ -49,6 +52,7 @@ async def submit_human_answer(
             answer_text=answer_text,
             root_cause=root_cause,
             expert_name=expert_name,
+            expected_sources=expected_sources or [],
         )
     )
 
