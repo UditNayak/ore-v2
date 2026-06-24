@@ -155,6 +155,17 @@ class HumanAnswer(Base):
     question: Mapped[Question] = relationship(back_populates="human_answers")
 
 
+class EvalRun(Base):
+    """One run of the evaluation harness over the test scenarios (for trends)."""
+
+    __tablename__ = "eval_runs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    created_at: Mapped[datetime] = created_at_column()
+    summary: Mapped[dict[str, Any]] = mapped_column(JSONB, default=dict)
+    results: Mapped[list[Any]] = mapped_column(JSONB, default=list)
+
+
 class LearningEvent(Base):
     __tablename__ = "learning_events"
 

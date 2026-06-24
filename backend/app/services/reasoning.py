@@ -6,6 +6,7 @@ each run it injects relevant past lessons (retrieved-memory) — empty on a fres
 on a re-run after a learning event exists.
 """
 
+import time
 from typing import Any, cast
 
 import structlog
@@ -37,9 +38,11 @@ async def _run_and_persist(session: AsyncSession, question: Question, version: i
         version=version,
         learning_context=lessons,
     )
+    started = time.monotonic()
     result = await get_graph().ainvoke(
         initial, config={"configurable": {"session": session, "gateway": get_gateway()}}
     )
+    elapsed_s = round(time.monotonic() - started, 2)
     final = _as_state(result)
 
     question.question_type = final.question_type
@@ -61,6 +64,7 @@ async def _run_and_persist(session: AsyncSession, question: Question, version: i
             "cited_source_refs": final.cited_source_refs,
             "iterations": final.iterations,
             "learning_applied": len(lessons),
+            "elapsed_s": elapsed_s,
         },
     )
     session.add(answer)

@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     embedding_dim: int = 384
     rag_top_k: int = 5
     seed_path: str = "app/data/seed"
+    qa_scenarios_path: str = "app/data/qa_scenarios.json"
 
     # Agentic retrieval loop (Phase 3).
     retrieval_max_iters: int = 3

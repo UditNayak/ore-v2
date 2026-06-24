@@ -40,6 +40,8 @@ class AnswerView(BaseModel):
     refused: bool
     refusal_reason: str | None
     cited_source_refs: list[str]
+    elapsed_s: float | None
+    learning_applied: int
     evidence: list[EvidenceView]
 
     @classmethod
@@ -59,6 +61,8 @@ class AnswerView(BaseModel):
             refused=bool(info.get("refused", False)),
             refusal_reason=info.get("refusal_reason"),
             cited_source_refs=info.get("cited_source_refs", []),
+            elapsed_s=info.get("elapsed_s"),
+            learning_applied=int(info.get("learning_applied", 0)),
             evidence=[
                 EvidenceView(
                     source_type=e.source_type,

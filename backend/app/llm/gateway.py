@@ -76,12 +76,17 @@ class LLMGateway:
 
 
 def _quiet_litellm() -> None:
-    """Silence LiteLLM's own stdout chatter; we emit our own structured metrics."""
+    """Silence LiteLLM's stdout chatter and enable rate-limit retries with backoff.
+
+    Retries (with the provider's Retry-After) let the agent survive Groq free-tier TPM
+    limits during multi-call runs like the eval harness, at the cost of latency.
+    """
     import logging
 
     import litellm
 
     litellm.suppress_debug_info = True
+    litellm.num_retries = 5
     logging.getLogger("LiteLLM").setLevel(logging.WARNING)
 
 
