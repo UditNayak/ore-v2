@@ -128,9 +128,46 @@ export default function AnswerColumn({
           </ol>
         </Collapsible>
       )}
-      <Collapsible title={`Evidence · ${answer.evidence.length}`}>
-        <EvidenceList evidence={answer.evidence} newRefs={newRefs} />
+      <EvidenceSections answer={answer} newRefs={newRefs} />
+    </div>
+  );
+}
+
+/** Citations the Reasoner actually relied on, vs. the rest it merely investigated. */
+function EvidenceSections({
+  answer,
+  newRefs,
+}: {
+  answer: AnswerView;
+  newRefs?: Set<string>;
+}) {
+  const cited = new Set(
+    answer.cited_source_refs.flatMap((r) => [
+      r.toLowerCase(),
+      // tolerate the bracketed "type:ref" form the model is shown
+      r.includes(":") ? r.slice(r.indexOf(":") + 1).toLowerCase() : r.toLowerCase(),
+    ]),
+  );
+  const isCited = (e: AnswerView["evidence"][number]) =>
+    cited.has(e.source_ref.toLowerCase()) ||
+    cited.has(`${e.source_type}:${e.source_ref}`.toLowerCase());
+
+  const used = answer.evidence.filter(isCited);
+  const other = answer.evidence.filter((e) => !isCited(e));
+  // Fallback: if nothing matched, don't hide everything — show all as "cited".
+  const primary = used.length > 0 ? used : answer.evidence;
+  const rest = used.length > 0 ? other : [];
+
+  return (
+    <div className="space-y-2">
+      <Collapsible title={`Evidence cited · ${primary.length}`} defaultOpen>
+        <EvidenceList evidence={primary} newRefs={newRefs} />
       </Collapsible>
+      {rest.length > 0 && (
+        <Collapsible title={`Other sources investigated · ${rest.length}`}>
+          <EvidenceList evidence={rest} newRefs={newRefs} />
+        </Collapsible>
+      )}
     </div>
   );
 }
